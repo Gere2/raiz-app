@@ -1,0 +1,112 @@
+"use client";
+
+import { useState } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { toast } from "sonner";
+
+import { useCart } from "@/components/cart-provider";
+import { useAuth } from "@/components/auth-provider";
+import { db } from "@/lib/firebase";
+import { addDoc, collection, serverTimestamp } from "firebase/firestore";
+
+export default function CheckoutClient() {
+  const { items, clearCart } = useCart();
+  const { user } = useAuth();
+  const router = useRouter();
+  const [submitting, setSubmitting] = useState(false);
+  const [notes, setNotes] = useState("");
+
+  const handlePlaceOrder = async () => {
+    if (!user) {
+      router.push(`/login?redirect=/checkout`);
+      return;
+    }
+    if (items.length === 0) {
+      toast.error("Tu carrito está vacío");
+      return;
+    }
+
+    try {
+      setSubmitting(true);
+
+      // Creamos el pedido APP en Firestore (aún sin pago real)
+      await addDoc(collection(db, "orders"), {
+        source: "APP",
+        customerUid: user.uid,
+        customerName: user.displayName || user.email || "Cliente",
+        customerEmail: user.email || "",
+        notes: notes || null,
+
+        status: "CREATED",
+        paymentStatus: "PENDING",
+
+        items: items.map((it) => ({
+          productId: it.product.id,
+          productName: it.product.name,
+          unitPrice: it.product.price,
+          qty: it.qty,
+        })),
+
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+
+      clearCart();
+      toast.success("Pedido creado. (Pago pendiente de implementar)");
+      router.push("/orders");
+    } catch {
+      toast.error("No se pudo crear el pedido");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <h1 className="text-2xl font-bold">Checkout</h1>
+
+      {!user && (
+        <div className="rounded-lg border p-4 text-sm">
+          <p className="text-gray-600">Necesitas iniciar sesión para confirmar el pedido.</p>
+          <button
+            onClick={() => router.push(`/login?redirect=/checkout`)}
+            className="mt-3 w-full rounded-lg bg-black py-2.5 text-sm font-medium text-white hover:bg-gray-800"
+          >
+            Ir a login
+          </button>
+        </div>
+      )}
+
+      <div className="rounded-lg border p-4 text-sm">
+        <p>
+          <span className="text-gray-500">Pedido para:</span>{" "}
+          {user?.displayName || user?.email || "—"}
+        </p>
+      </div>
+
+      <div>
+        <label className="mb-1 block text-sm font-medium">Notas (opcional)</label>
+        <textarea
+          value={notes}
+          onChange={(e) => setNotes(e.target.value)}
+          placeholder="Sin azúcar, leche de avena..."
+          className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black"
+          rows={2}
+        />
+      </div>
+
+      <button
+        onClick={handlePlaceOrder}
+        disabled={submitting || !user}
+        className="w-full rounded-lg bg-black py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50"
+      >
+        {submitting ? "Creando pedido..." : "Confirmar y pagar"}
+      </button>
+
+      <Link href="/cart" className="block text-center text-sm text-gray-500 underline">
+        Volver al carrito
+      </Link>
+    </div>
+  );
+}
