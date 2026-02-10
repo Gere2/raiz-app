@@ -137,10 +137,6 @@ export default function LoginClient() {
       >
         {isRegister ? "¿Ya tienes cuenta? Inicia sesión" : "¿No tienes cuenta? Regístrate"}
       </button>
-
-      <p className="text-center text-xs text-gray-400">
-        Al continuar aceptas recibir notificaciones sobre el estado del pedido.
-      </p>
     </div>
   );
 }

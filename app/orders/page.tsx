@@ -8,7 +8,7 @@ import { useAuth } from "@/components/auth-provider";
 type OrderItem = { productId: string; productName: string; unitPrice: number; qty: number };
 type OrderDoc = {
   customerUid?: string; notes?: string | null; status?: string;
-  items?: OrderItem[]; total?: number; pickupTime?: string; createdAt?: any;
+  items?: OrderItem[]; total?: number; pickupTime?: string; createdAt?: { toMillis?: () => number } | null;
 };
 
 function calcTotal(items?: OrderItem[]) {
