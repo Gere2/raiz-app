@@ -6,7 +6,10 @@ import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/auth-provider";
 
 type OrderItem = { productId: string; productName: string; unitPrice: number; qty: number };
-type OrderDoc = { customerUid?: string; notes?: string | null; status?: string; items?: OrderItem[]; total?: number; createdAt?: any };
+type OrderDoc = {
+  customerUid?: string; notes?: string | null; status?: string;
+  items?: OrderItem[]; total?: number; pickupTime?: string; createdAt?: any;
+};
 
 function calcTotal(items?: OrderItem[]) {
   if (!items || items.length === 0) return 0;
@@ -80,7 +83,10 @@ export default function OrdersPage() {
                   <div className="mt-2 space-y-0.5">
                     {data.items?.map((it, i) => <p key={i} className="text-sm text-brand-700">{it.qty}x {it.productName}</p>)}
                   </div>
-                  {data.notes && <p className="mt-2 text-xs text-brand-400">📝 {data.notes}</p>}
+                  {data.pickupTime && (
+                    <p className="mt-2 text-sm font-medium text-leaf-700">⏰ Recogida: {data.pickupTime}</p>
+                  )}
+                  {data.notes && <p className="mt-1 text-xs text-brand-400">📝 {data.notes}</p>}
                 </div>
                 <div className="text-right shrink-0">
                   <span className={"inline-block rounded-full px-2.5 py-1 text-xs font-medium " + s.color}>{s.label}</span>
