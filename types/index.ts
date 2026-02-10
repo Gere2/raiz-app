@@ -28,6 +28,9 @@ export interface AppOrderItem {
   productName: string;
   qty: number;
   notes?: string;
+	pickupType?: "ASAP" | "SCHEDULED";
+	pickupAt?: any;
+	pickupTimeLabel?: string | null;
 }
 
 export interface AppOrder {
