@@ -5,37 +5,21 @@ import { collection, onSnapshot, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { useAuth } from "@/components/auth-provider";
 
-type OrderItem = {
-  productId: string;
-  productName: string;
-  unitPrice: number;
-  qty: number;
-};
-
-type OrderDoc = {
-  customerUid?: string;
-  customerName?: string;
-  notes?: string | null;
-  status?: string;
-  source?: string;
-  items?: OrderItem[];
-  total?: number;
-  createdAt?: any;
-  updatedAt?: any;
-};
+type OrderItem = { productId: string; productName: string; unitPrice: number; qty: number };
+type OrderDoc = { customerUid?: string; notes?: string | null; status?: string; items?: OrderItem[]; total?: number; createdAt?: any };
 
 function calcTotal(items?: OrderItem[]) {
   if (!items || items.length === 0) return 0;
   return items.reduce((sum, it) => sum + (it.unitPrice || 0) * (it.qty || 0), 0);
 }
 
-const STATUS_LABELS: Record<string, { label: string; color: string }> = {
-  PAYMENT_PENDING: { label: "Pendiente de pago", color: "bg-yellow-100 text-yellow-700" },
-  PAID: { label: "Pagado", color: "bg-green-100 text-green-700" },
+const STATUS: Record<string, { label: string; color: string }> = {
+  PAYMENT_PENDING: { label: "Pendiente de pago", color: "bg-cream-200 text-cream-800" },
+  PAID: { label: "Pagado", color: "bg-leaf-100 text-leaf-800" },
   IN_QUEUE: { label: "En cola", color: "bg-blue-100 text-blue-700" },
-  PREPARING: { label: "Preparando", color: "bg-orange-100 text-orange-700" },
-  READY: { label: "Listo para recoger!", color: "bg-emerald-100 text-emerald-700" },
-  PICKED_UP: { label: "Recogido", color: "bg-gray-100 text-gray-500" },
+  PREPARING: { label: "Preparando ☕", color: "bg-brand-100 text-brand-800" },
+  READY: { label: "¡Listo para recoger!", color: "bg-leaf-200 text-leaf-900" },
+  PICKED_UP: { label: "Recogido", color: "bg-brand-100 text-brand-500" },
   CANCELED: { label: "Cancelado", color: "bg-red-100 text-red-600" },
 };
 
@@ -47,87 +31,60 @@ export default function OrdersPage() {
 
   useEffect(() => {
     if (loading) return;
-    if (!user) {
-      setPageLoading(false);
-      setOrders([]);
-      return;
-    }
-
-    setPageLoading(true);
-    setErrorMsg(null);
-
-    // Query simple: solo 1 where, sin orderBy = no necesita indice compuesto
+    if (!user) { setPageLoading(false); setOrders([]); return; }
+    setPageLoading(true); setErrorMsg(null);
     const q = query(collection(db, "orders"), where("customerUid", "==", user.uid));
-
-    const unsub = onSnapshot(
-      q,
+    const unsub = onSnapshot(q,
       (snap) => {
         const list = snap.docs
           .map((d) => ({ id: d.id, data: d.data() as OrderDoc }))
-          // Ordenar en cliente para evitar indices
-          .sort((a, b) => {
-            const ta = a.data.createdAt?.toMillis?.() ?? 0;
-            const tb = b.data.createdAt?.toMillis?.() ?? 0;
-            return tb - ta;
-          });
-        setOrders(list);
-        setPageLoading(false);
+          .sort((a, b) => (b.data.createdAt?.toMillis?.() ?? 0) - (a.data.createdAt?.toMillis?.() ?? 0));
+        setOrders(list); setPageLoading(false);
       },
-      (err) => {
-        console.error("Error en orders query:", err);
-        setErrorMsg(err?.message || "Error cargando pedidos");
-        setPageLoading(false);
-      }
+      (err) => { setErrorMsg(err?.message || "Error"); setPageLoading(false); }
     );
-
     return () => unsub();
   }, [user, loading]);
 
   const content = useMemo(() => {
-    if (loading || pageLoading) {
-      return <p className="py-10 text-center text-gray-500">Cargando pedidos...</p>;
-    }
-    if (errorMsg) {
-      return <p className="py-10 text-center text-red-600">Error: {errorMsg}</p>;
-    }
-    if (!user) {
-      return (
-        <div className="py-10 text-center">
-          <p className="mb-4 text-gray-500">Inicia sesion para ver tus pedidos</p>
-          <a href="/login?redirect=/orders" className="rounded-lg bg-black px-4 py-2 text-sm text-white">Iniciar sesion</a>
-        </div>
-      );
-    }
-    if (orders.length === 0) {
-      return (
-        <div className="py-10 text-center">
-          <p className="text-gray-500">Aun no tienes pedidos</p>
-          <a href="/" className="mt-2 inline-block text-sm underline">Ver la carta</a>
-        </div>
-      );
-    }
-
+    if (loading || pageLoading) return (
+      <div className="flex flex-col items-center py-10 gap-3">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-leaf-600 border-t-transparent" />
+        <p className="text-brand-500">Cargando pedidos...</p>
+      </div>
+    );
+    if (errorMsg) return <p className="py-10 text-center text-red-600">Error: {errorMsg}</p>;
+    if (!user) return (
+      <div className="py-10 text-center">
+        <p className="mb-4 text-brand-500">Inicia sesión para ver tus pedidos</p>
+        <a href="/login?redirect=/orders" className="rounded-xl bg-leaf-600 px-4 py-2 text-sm text-white">Iniciar sesión</a>
+      </div>
+    );
+    if (orders.length === 0) return (
+      <div className="py-10 text-center">
+        <p className="text-3xl mb-2">🌿</p>
+        <p className="text-brand-500">Aún no tienes pedidos</p>
+        <a href="/" className="mt-3 inline-block rounded-full bg-leaf-600 px-4 py-2 text-sm text-white">Ver la carta</a>
+      </div>
+    );
     return (
       <div className="space-y-3">
         {orders.map(({ id, data }) => {
-          const computedTotal = typeof data.total === "number" ? data.total : calcTotal(data.items);
-          const statusInfo = STATUS_LABELS[data.status || ""] || { label: data.status || "---", color: "bg-gray-100 text-gray-600" };
-
+          const t = typeof data.total === "number" ? data.total : calcTotal(data.items);
+          const s = STATUS[data.status || ""] || { label: data.status || "---", color: "bg-brand-100 text-brand-600" };
           return (
-            <div key={id} className="rounded-lg border p-4">
+            <div key={id} className="rounded-xl border border-brand-200 bg-white p-4 shadow-sm">
               <div className="flex items-start justify-between gap-4">
                 <div>
-                  <p className="text-xs text-gray-400">#{id.slice(-6).toUpperCase()}</p>
+                  <p className="text-xs text-brand-400">#{id.slice(-6).toUpperCase()}</p>
                   <div className="mt-2 space-y-0.5">
-                    {data.items?.map((it, i) => (
-                      <p key={i} className="text-sm">{it.qty}x {it.productName}</p>
-                    ))}
+                    {data.items?.map((it, i) => <p key={i} className="text-sm text-brand-700">{it.qty}x {it.productName}</p>)}
                   </div>
-                  {data.notes && <p className="mt-2 text-xs text-gray-400">{data.notes}</p>}
+                  {data.notes && <p className="mt-2 text-xs text-brand-400">📝 {data.notes}</p>}
                 </div>
-                <div className="text-right">
-                  <span className={"inline-block rounded-full px-2.5 py-1 text-xs font-medium " + statusInfo.color}>{statusInfo.label}</span>
-                  <p className="mt-2 text-sm font-semibold">{computedTotal.toFixed(2)} EUR</p>
+                <div className="text-right shrink-0">
+                  <span className={"inline-block rounded-full px-2.5 py-1 text-xs font-medium " + s.color}>{s.label}</span>
+                  <p className="mt-2 text-sm font-semibold text-leaf-700">{t.toFixed(2)} €</p>
                 </div>
               </div>
             </div>
@@ -139,7 +96,7 @@ export default function OrdersPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Mis pedidos</h1>
+      <h1 className="text-2xl font-bold text-brand-900">Mis pedidos</h1>
       {content}
     </div>
   );

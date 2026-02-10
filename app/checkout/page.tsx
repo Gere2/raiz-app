@@ -15,15 +15,14 @@ export default function CheckoutPage() {
   const router = useRouter();
   const [submitting, setSubmitting] = useState(false);
   const [notes, setNotes] = useState("");
-
   const estimatedTotal = items.reduce((sum, item) => sum + item.product.price * item.qty, 0);
 
   if (!user) { router.push("/login?redirect=/checkout"); return null; }
   if (items.length === 0) {
     return (
       <div className="py-20 text-center">
-        <p className="text-gray-500">No tienes nada en el carrito</p>
-        <Link href="/" className="mt-4 inline-block text-sm underline">Ver la carta</Link>
+        <p className="text-brand-600">No tienes nada en el carrito</p>
+        <Link href="/" className="mt-4 inline-block rounded-full bg-leaf-600 px-4 py-2 text-sm text-white">Ver la carta</Link>
       </div>
     );
   }
@@ -32,7 +31,6 @@ export default function CheckoutPage() {
     setSubmitting(true);
     try {
       const total = items.reduce((sum, it) => sum + it.product.price * it.qty, 0);
-
       await addDoc(collection(db, "orders"), {
         customerName: user.displayName || user.email || "Cliente app",
         notes: notes || "",
@@ -51,7 +49,7 @@ export default function CheckoutPage() {
           notes: it.notes || "",
         })),
       });
-      toast.success("Pedido creado! Pendiente de pago.");
+      toast.success("¡Pedido creado! Pendiente de pago.");
       clearCart();
       router.push("/orders");
     } catch (error) {
@@ -64,31 +62,31 @@ export default function CheckoutPage() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Confirmar pedido</h1>
-      <div className="rounded-lg border p-4">
-        <h2 className="mb-3 font-semibold">Tu pedido</h2>
+      <h1 className="text-2xl font-bold text-brand-900">Confirmar pedido</h1>
+      <div className="rounded-xl border border-brand-200 bg-white p-4 shadow-sm">
+        <h2 className="mb-3 font-semibold text-brand-800">Tu pedido</h2>
         {items.map((item) => (
           <div key={item.product.id} className="flex justify-between py-1.5 text-sm">
-            <span>{item.qty}x {item.product.name}</span>
-            <span className="text-gray-500">{(item.product.price * item.qty).toFixed(2)} EUR</span>
+            <span className="text-brand-700">{item.qty}x {item.product.name}</span>
+            <span className="text-brand-500">{(item.product.price * item.qty).toFixed(2)} €</span>
           </div>
         ))}
-        <div className="mt-3 flex justify-between border-t pt-3 font-semibold">
-          <span>Total estimado</span>
-          <span>{estimatedTotal.toFixed(2)} EUR</span>
+        <div className="mt-3 flex justify-between border-t border-brand-200 pt-3 font-semibold">
+          <span className="text-brand-900">Total</span>
+          <span className="text-leaf-700">{estimatedTotal.toFixed(2)} €</span>
         </div>
       </div>
-      <div className="rounded-lg border p-4 text-sm">
-        <p><span className="text-gray-500">Pedido para:</span> {user.displayName || user.email}</p>
+      <div className="rounded-xl border border-brand-200 bg-white p-4 text-sm shadow-sm">
+        <p><span className="text-brand-500">Pedido para:</span> <span className="font-medium text-brand-900">{user.displayName || user.email}</span></p>
       </div>
       <div>
-        <label className="mb-1 block text-sm font-medium">Notas (opcional)</label>
-        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Sin az\u00facar, leche de avena..." className="w-full rounded-lg border px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-black" rows={2} />
+        <label className="mb-1 block text-sm font-medium text-brand-800">Notas (opcional)</label>
+        <textarea value={notes} onChange={(e) => setNotes(e.target.value)} placeholder="Sin azúcar, leche de avena..." className="w-full rounded-xl border border-brand-300 bg-white px-3 py-2 text-sm text-brand-900 outline-none focus:ring-2 focus:ring-leaf-500 placeholder:text-brand-400" rows={2} />
       </div>
-      <button onClick={handlePlaceOrder} disabled={submitting} className="w-full rounded-lg bg-black py-3 text-sm font-medium text-white transition-colors hover:bg-gray-800 disabled:opacity-50">
+      <button onClick={handlePlaceOrder} disabled={submitting} className="w-full rounded-xl bg-leaf-600 py-3 text-sm font-medium text-white transition-colors hover:bg-leaf-700 disabled:opacity-50">
         {submitting ? "Creando pedido..." : "Confirmar y pagar"}
       </button>
-      <Link href="/cart" className="block text-center text-sm text-gray-500 underline">Volver al carrito</Link>
+      <Link href="/cart" className="block text-center text-sm text-brand-500 underline hover:text-brand-700">Volver al carrito</Link>
     </div>
   );
 }
