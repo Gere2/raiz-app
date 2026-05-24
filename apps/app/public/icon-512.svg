@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="102" fill="#312219"/>
+  <rect x="16" y="16" width="480" height="480" rx="86" fill="#3b723e"/>
+  <text x="256" y="310" font-size="200" text-anchor="middle" fill="white" font-family="Arial">☕</text>
+  <text x="256" y="410" font-size="42" text-anchor="middle" fill="rgba(255,255,255,0.8)" font-family="Arial" font-weight="bold">RAÍZ Y GRANO</text>
+</svg>

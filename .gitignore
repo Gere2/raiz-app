@@ -27,6 +27,8 @@ yarn-error.log*
 
 # local env files
 .env*.local
+.env.production.local
+.env.local
 
 # vercel
 .vercel
@@ -35,3 +37,27 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 raiz-app-files/
+
+# secrets & credentials (NEVER commit these)
+**/secrets/
+*-admin.json
+service-account*.json
+GOOGLE_APPLICATION_CREDENTIALS
+
+# backup files (NEVER commit these)
+*.bak
+*.bak2
+*.old
+*.json.bak*
+
+# backup directories
+apps/pos_v0_backup/
+
+# analysis files
+analisis-proyecto.md
+
+# monorepo apps — Next.js builds y deps (defensivo; cada app tiene su .gitignore)
+apps/*/node_modules/
+apps/*/.next/
+apps/*/out/
+apps/*/.vercel/

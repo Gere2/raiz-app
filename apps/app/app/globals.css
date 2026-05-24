@@ -1,0 +1,266 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  /* Brand palette — warm coffee tones */
+  --brand-50: #faf7f2;
+  --brand-100: #f0e8d8;
+  --brand-200: #e6d9c3;
+  --brand-300: #d4c0a0;
+  --brand-400: #a08b6e;
+  --brand-500: #7a6a53;
+  --brand-600: #5c4f3c;
+  --brand-700: #463b2d;
+  --brand-800: #3a3126;
+  --brand-900: #312219;
+
+  /* Leaf green */
+  --leaf-50: #f0fdf0;
+  --leaf-100: #dcfcdc;
+  --leaf-200: #b4f3b4;
+  --leaf-300: #7be67b;
+  --leaf-400: #4dc94d;
+  --leaf-500: #3b9e3b;
+  --leaf-600: #3b723e;
+  --leaf-700: #2d5a2f;
+  --leaf-800: #1d3d1f;
+  --leaf-900: #132613;
+}
+
+/* Custom colors via Tailwind utility classes */
+@layer base {
+  body {
+    @apply bg-brand-50 text-brand-900 antialiased;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* Better focus styles */
+  *:focus-visible {
+    @apply outline-none ring-2 ring-leaf-500/40 ring-offset-1;
+  }
+
+  /* Smooth page transitions */
+  main {
+    animation: fadeIn 0.3s ease-out;
+  }
+}
+
+@layer utilities {
+  /* Brand colors */
+  .bg-brand-50 { background-color: var(--brand-50); }
+  .bg-brand-100 { background-color: var(--brand-100); }
+  .bg-brand-200 { background-color: var(--brand-200); }
+  .bg-brand-300 { background-color: var(--brand-300); }
+  .bg-brand-400 { background-color: var(--brand-400); }
+  .bg-brand-500 { background-color: var(--brand-500); }
+  .bg-brand-600 { background-color: var(--brand-600); }
+  .bg-brand-700 { background-color: var(--brand-700); }
+  .bg-brand-800 { background-color: var(--brand-800); }
+  .bg-brand-900 { background-color: var(--brand-900); }
+  .text-brand-50 { color: var(--brand-50); }
+  .text-brand-100 { color: var(--brand-100); }
+  .text-brand-200 { color: var(--brand-200); }
+  .text-brand-300 { color: var(--brand-300); }
+  .text-brand-400 { color: var(--brand-400); }
+  .text-brand-500 { color: var(--brand-500); }
+  .text-brand-600 { color: var(--brand-600); }
+  .text-brand-700 { color: var(--brand-700); }
+  .text-brand-800 { color: var(--brand-800); }
+  .text-brand-900 { color: var(--brand-900); }
+  .border-brand-100 { border-color: var(--brand-100); }
+  .border-brand-200 { border-color: var(--brand-200); }
+  .border-brand-300 { border-color: var(--brand-300); }
+  .border-brand-400 { border-color: var(--brand-400); }
+
+  .bg-leaf-50 { background-color: var(--leaf-50); }
+  .bg-leaf-100 { background-color: var(--leaf-100); }
+  .bg-leaf-200 { background-color: var(--leaf-200); }
+  .bg-leaf-300 { background-color: var(--leaf-300); }
+  .bg-leaf-400 { background-color: var(--leaf-400); }
+  .bg-leaf-500 { background-color: var(--leaf-500); }
+  .bg-leaf-600 { background-color: var(--leaf-600); }
+  .bg-leaf-700 { background-color: var(--leaf-700); }
+  .text-leaf-100 { color: var(--leaf-100); }
+  .text-leaf-200 { color: var(--leaf-200); }
+  .text-leaf-300 { color: var(--leaf-300); }
+  .text-leaf-400 { color: var(--leaf-400); }
+  .text-leaf-500 { color: var(--leaf-500); }
+  .text-leaf-600 { color: var(--leaf-600); }
+  .text-leaf-700 { color: var(--leaf-700); }
+  .text-leaf-800 { color: var(--leaf-800); }
+  .border-leaf-200 { border-color: var(--leaf-200); }
+  .border-leaf-300 { border-color: var(--leaf-300); }
+  .border-leaf-400 { border-color: var(--leaf-400); }
+  .border-leaf-500 { border-color: var(--leaf-500); }
+  .border-leaf-600 { border-color: var(--leaf-600); }
+  .ring-leaf-300 { --tw-ring-color: var(--leaf-300); }
+  .ring-leaf-400\/20 { --tw-ring-color: rgba(77, 201, 77, 0.2); }
+  .ring-leaf-500\/40 { --tw-ring-color: rgba(59, 158, 59, 0.4); }
+  .shadow-brand-900\/20 { --tw-shadow-color: rgba(49, 34, 25, 0.2); }
+  .shadow-leaf-200\/50 { --tw-shadow-color: rgba(180, 243, 180, 0.5); }
+  .shadow-leaf-600\/20 { --tw-shadow-color: rgba(59, 114, 62, 0.2); }
+
+  /* Safe area for iPhone */
+  .safe-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  /* Hide scrollbar */
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+  /* Subtle craft texture overlay */
+  .craft-texture {
+    position: relative;
+    background: linear-gradient(45deg, transparent 0%, rgba(49, 34, 25, 0.01) 50%, transparent 100%);
+  }
+
+  /* Glass card utility */
+  .glass-card {
+    @apply bg-white/60 backdrop-blur border border-brand-200/20 rounded-lg;
+  }
+
+  /* Active nav dot indicator */
+  .dot-indicator {
+    @apply h-1 w-1 rounded-full bg-brand-900;
+  }
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes pageTransition {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes cartBounce {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.25); }
+}
+
+@keyframes statusPulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.15); opacity: 0.8; }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.animate-fade-up {
+  animation: fadeUp 0.4s ease-out both;
+}
+
+.animate-scale-in {
+  animation: scaleIn 0.3s ease-out both;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s ease-out both;
+}
+
+.animate-page-transition {
+  animation: pageTransition 0.3s ease-out;
+}
+
+.cart-pop {
+  animation: cartBounce 0.3s ease-out;
+}
+
+.status-pulse {
+  animation: statusPulse 2s ease-in-out infinite;
+}
+
+/* Staggered children animation */
+.stagger-children > * {
+  animation: fadeUp 0.4s ease-out both;
+}
+.stagger-children > *:nth-child(1) { animation-delay: 0ms; }
+.stagger-children > *:nth-child(2) { animation-delay: 60ms; }
+.stagger-children > *:nth-child(3) { animation-delay: 120ms; }
+.stagger-children > *:nth-child(4) { animation-delay: 180ms; }
+.stagger-children > *:nth-child(5) { animation-delay: 240ms; }
+.stagger-children > *:nth-child(6) { animation-delay: 300ms; }
+.stagger-children > *:nth-child(7) { animation-delay: 360ms; }
+.stagger-children > *:nth-child(8) { animation-delay: 420ms; }
+
+/* Loading skeleton shimmer */
+.skeleton {
+  background: linear-gradient(90deg, var(--brand-100) 25%, var(--brand-200) 50%, var(--brand-100) 75%);
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+
+/* Smooth hover transitions on all interactive elements */
+button, a {
+  transition: all 0.15s ease-out;
+}
+
+/* Better scrolling on iOS */
+.overflow-x-auto, .overflow-y-auto {
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Blur overlay for modals */
+.backdrop-blur-md {
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+}
+
+/* Selection color */
+::selection {
+  background-color: var(--leaf-200);
+  color: var(--brand-900);
+}
+
+/* PWA Standalone mode */
+body.standalone-mode {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+body.standalone-mode header {
+  padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* iOS safe areas */
+@supports (padding: env(safe-area-inset-bottom)) {
+  .safe-bottom {
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 4px);
+  }
+}
+
+/* Prevent pull-to-refresh in standalone */
+body.standalone-mode {
+  overscroll-behavior-y: contain;
+}
+
+/* Prevent text selection on long press (app-like) */
+body.standalone-mode button,
+body.standalone-mode a {
+  -webkit-touch-callout: none;
+  -webkit-user-select: none;
+  user-select: none;
+}

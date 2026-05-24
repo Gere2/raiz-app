@@ -1,5 +1,7 @@
-import { collection, doc, getDocs, setDoc, query, where, serverTimestamp } from "firebase/firestore"
+import { collection, doc, getDoc, getDocs, setDoc, query, where, serverTimestamp } from "firebase/firestore"
 import { db } from "./firebase"
+import { signInWithEmailAndPassword } from "firebase/auth"
+import { auth } from "./firebase-auth"
 
 // Tipos
 export type UserRole = "admin" | "vendedor"
@@ -74,15 +76,37 @@ export const registerUser = async (name: string, pin: string, role: UserRole): P
   return newUser
 }
 
-// Inicio de sesión
+// Inicio de sesion (AUTH FIRST)
+// Nota: con rules cerradas, NO podemos leer Firestore antes de autenticar.
+// Usamos "name" como email.
 export const signIn = async (name: string, pin: string): Promise<CafeUser> => {
-  if (!db) throw new Error("Firestore no está inicializado. Verifica tu configuración de Firebase.")
+  if (!db) throw new Error("Firestore no esta inicializado. Verifica tu configuracion de Firebase.")
 
-  const user = await getUserByName(name)
-  if (!user) throw new Error("Usuario no encontrado")
-  if (user.pin !== pin) throw new Error("PIN incorrecto")
-  return user
+  const email = String(name || "").trim().toLowerCase()
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Introduce un email v\u00e1lido (usuario)")
+
+  try {
+    await signInWithEmailAndPassword(auth, email, pin)
+    await auth.currentUser?.getIdToken(true)
+  } catch (e) {
+    console.error("Error en login Firebase Auth:", e)
+    throw new Error("Email o PIN incorrecto")
+  }
+
+  // Ya autenticado => ahora SI podemos leer Firestore
+  const ref = doc(db, PRIMARY_USERS_COLLECTION, email)
+  const snap = await getDoc(ref)
+
+  if (!snap.exists()) {
+    // Si no existe doc, igual permitimos entrar (porque Auth + claim manda),
+    // pero devolvemos un user minimo
+    return { id: email, name: email, pin: "", role: "vendedor", createdAt: null } as any
+  }
+
+  const data = snap.data()
+  return normalizeUser(data, snap.id) as CafeUser
 }
+
 
 // Obtener todos los usuarios (merge: cafe_users + users, sin duplicados por id)
 export const getAllUsers = async (): Promise<CafeUser[]> => {
@@ -108,10 +132,21 @@ export const getAllUsers = async (): Promise<CafeUser[]> => {
 // Verificar acceso Firestore (lectura simple)
 export const checkFirestoreAccess = async (): Promise<boolean> => {
   try {
-    await getDocs(collection(db, PRIMARY_USERS_COLLECTION))
+    console.log("[checkFirestoreAccess] auth.currentUser:", auth.currentUser?.email || null)
+
+    if (!auth.currentUser) {
+      console.log("[checkFirestoreAccess] NO AUTH -> false")
+      return false
+    }
+
+    const token = await auth.currentUser.getIdTokenResult(true)
+    console.log("[checkFirestoreAccess] claims:", token.claims)
+
+    await getDocs(collection(db, "config"))
+    console.log("[checkFirestoreAccess] OK config read")
     return true
   } catch (e) {
-    console.error("Error al verificar acceso a Firestore:", e)
+    console.error("[checkFirestoreAccess] ERROR:", e)
     return false
   }
 }

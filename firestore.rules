@@ -1,0 +1,260 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── Helper functions ───────────────────────────────────────
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isStaff() {
+      return signedIn() && request.auth.token.staff == true;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.role == "admin";
+    }
+
+    function isOwner(uid) {
+      return signedIn() && request.auth.uid == uid;
+    }
+
+    function isOrgMember(orgId) {
+      return signedIn() &&
+        exists(/databases/$(database)/documents/orgs/$(orgId)/members/$(request.auth.uid));
+    }
+
+    // ─── LOYALTY GUARD ──────────────────────────────────────────
+    // Prevents clients from directly modifying point balances,
+    // badge unlocks, mission completions, and other loyalty-sensitive
+    // fields. These are ONLY writable by the server (Admin SDK)
+    // via the loyalty engine.
+
+    function isNotModifyingLoyaltyFields() {
+      let affectedKeys = request.resource.data.diff(resource.data).affectedKeys();
+      return !affectedKeys.hasAny([
+        'loyaltyPoints',
+        'totalPointsEarned',
+        'totalPointsRedeemed',
+        'unlockedBadges',
+        'completedMissions',
+        'completedQuizzes',
+        'totalRedemptions',
+        'pointsHistory',
+        'streak',
+        'lastTxId',
+        'lastTxAt'
+      ]);
+    }
+
+    // ─── Public catalog (read-only for everyone) ────────────────
+    // Products and categories are public (product catalog) — anyone can read
+    // Config is sensitive — only signed-in users can read
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /categories/{categoryId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /config/{doc=**} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // ─── Customer data (HARDENED) ───────────────────────────────
+    // Users can read their own profile and update NON-LOYALTY fields
+    // (e.g., preferences, display name).
+    // All loyalty-sensitive fields are written only by Admin SDK.
+
+    match /users/{userId} {
+      allow read, write: if isOwner(userId);
+    }
+
+    match /customer_profiles/{userId} {
+      allow read: if isOwner(userId) || isStaff();
+      allow create: if isOwner(userId);
+      allow update: if (isOwner(userId) && isNotModifyingLoyaltyFields()) || isStaff();
+    }
+
+    // ─── Loyalty Transactions (server-only write, user reads own) ──
+
+    match /loyalty_transactions/{txId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
+    // ─── Quiz Attempts (server-only write, user reads own) ──────
+
+    match /quiz_attempts/{attemptId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
+    // ─── Mission Completions (server-only write, user reads own) ─
+
+    match /mission_completions/{completionId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
+    // ─── Orders (customers own theirs, staff manages all) ───────
+
+    match /orders/{orderId} {
+      allow read: if signedIn() &&
+        (resource.data.customerUid == request.auth.uid || isStaff());
+      allow create: if signedIn();
+      allow update: if isStaff() ||
+        (signedIn() && resource.data.customerUid == request.auth.uid);
+      allow delete: if isAdmin();
+    }
+
+    match /teacher_orders/{orderId} {
+      allow read, write: if isStaff();
+    }
+
+    // ─── Teacher App Orders (teachers create, own reads, staff manages) ──
+
+    match /teacher_app_orders/{orderId} {
+      allow read: if signedIn() &&
+        (resource.data.teacherUid == request.auth.uid || isStaff());
+      allow create: if signedIn();
+      allow update: if isStaff();
+      allow delete: if isAdmin();
+    }
+
+    // ─── Meeting Combos (public read for teachers, staff manages) ────
+
+    match /meeting_combos/{comboId} {
+      allow read: if signedIn();
+      allow write: if isStaff();
+    }
+
+    // ─── POS / Staff-only collections ───────────────────────────
+
+    match /tickets/{doc=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /cafe_users/{doc=**} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /staff/{doc=**} {
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
+    match /inventory/{doc=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /inventory_movements/{doc=**} {
+      allow read, write: if isStaff();
+    }
+
+    match /inventory_categories/{doc=**} {
+      allow read: if isStaff();
+      allow write: if isStaff();
+    }
+
+    match /product_daily_stats/{doc=**} {
+      allow read: if isStaff();
+      allow write: if isStaff();
+    }
+
+    // ─── Redemptions (HARDENED — server-only create) ────────────
+    // Users can read their own. Staff can update (mark as used).
+    // Redemptions are ONLY created by the loyalty engine (Admin SDK).
+
+    match /redemptions/{redemptionId} {
+      allow read: if signedIn() &&
+        (resource.data.uid == request.auth.uid || isStaff());
+      allow create: if false;
+      allow update: if isStaff();
+    }
+
+    // ─── Exam Pass: Bono Supervivencia Exámenes (HARDENED) ──────
+    // Passes are created with status="pending" by Brain when checkout starts,
+    // then transitioned to "active" by the Stripe webhook. All mutations to
+    // creditsTotal/creditsUsed/creditsReserved are atomic Admin-SDK
+    // transactions in the exam-pass engine. Clients NEVER write these docs.
+    // Owner can read own pass (lets the app subscribe via onSnapshot to
+    // reflect status pending → active in real time). Staff can read all.
+
+    match /exam_passes/{passId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
+    // One doc per credit reservation/consumption. Created with status
+    // "reserved", transitions to "consumed" on payment confirm or to
+    // "released" on failure/cancellation. Server-only writes; idempotency
+    // is enforced inside the Admin-SDK transaction.
+
+    match /exam_pass_redemptions/{redemptionId} {
+      allow read: if signedIn() &&
+        (resource.data.userId == request.auth.uid || isStaff());
+      allow write: if false;
+    }
+
+    // Per-org sold counter (drives the 20€ → 22€ early-bird scaling).
+    // Fully closed: only Brain's Admin SDK reads/increments. The client
+    // gets the current price via the /exam-pass/quote endpoint, never by
+    // reading this counter directly.
+
+    match /exam_pass_counters/{orgId} {
+      allow read, write: if false;
+    }
+
+    // ─── Feedback (public create, staff reads) ──────────────────
+
+    match /feedback/{feedbackId} {
+      allow create: if true;
+      allow read: if isStaff();
+    }
+
+    // ─── Reports / Improvements (authenticated create, staff manages) ──
+
+    match /reports/{reportId} {
+      allow create: if signedIn();
+      allow read, update, delete: if isStaff();
+    }
+
+    // ─── Brain / Orgs (membership-based access) ─────────────────
+
+    match /orgs/{orgId} {
+      allow read: if isOrgMember(orgId);
+      allow create: if signedIn();
+      allow update, delete: if isOrgMember(orgId);
+
+      // Rewards catalog: any signed-in user can read (customers need to see rewards)
+      // Only org members (Brain staff) can write
+      match /rewards_catalog/{rewardId} {
+        allow read: if signedIn();
+        allow write: if isOrgMember(orgId);
+      }
+
+      // All other subcollections: recipes, catalog, skus, suppliers, etc.
+      match /{subcollection}/{docId=**} {
+        allow read, write: if isOrgMember(orgId);
+      }
+    }
+
+    // ─── Test collection (admin only) ───────────────────────────
+
+    match /_test_security/{doc=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
