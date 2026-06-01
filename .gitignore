@@ -61,3 +61,9 @@ apps/*/node_modules/
 apps/*/.next/
 apps/*/out/
 apps/*/.vercel/
+
+# editor / tooling artifacts (locales, no van al repo)
+.Rhistory
+.neurofs/
+.obsidian/
+*.base
