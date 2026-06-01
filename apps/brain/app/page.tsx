@@ -59,6 +59,9 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
   "quizzes",
   "missions",
   "reports",
+  "margins", // dashboard por-ventas vacío: tickets/orders no llevan orgId y
+             // falta el índice (orgId+createdAt). La demo de márgenes va por
+             // "Escandallos", que sí tiene coste/food-cost por receta.
   "staging", // depende de servicio Python externo (singularidad-engine);
              // su lógica de matching factura↔mov se migrará a lib/treasury/
              // invoice-matcher.ts. Ver PLAN.md sección "Backlog técnico".
