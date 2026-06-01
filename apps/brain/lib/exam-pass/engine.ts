@@ -29,6 +29,7 @@ import {
 import {
   computeExpiresAt,
   computeOrder,
+  creditsAvailable,
   dayKeyMadrid,
   eligibilityForReservation,
   isPassActive,
@@ -763,8 +764,7 @@ export async function getCustomerExamPassStatus(
     return {
       state: "active",
       pass: active,
-      creditsAvailable:
-        active.creditsTotal - active.creditsUsed - active.creditsReserved,
+      creditsAvailable: creditsAvailable(active),
     }
   }
 

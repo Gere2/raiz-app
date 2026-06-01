@@ -44,6 +44,7 @@ export interface ExamPassError {
    */
   details?: {
     existingPassId?: string
+    creditsAvailable?: number
     creditsUsed?: number
     creditsReserved?: number
     creditsTotal?: number
@@ -203,6 +204,85 @@ export interface CustomerBonoStatus {
   creditsAvailable: number
 }
 
+type JsonObject = Record<string, unknown>
+
+function isJsonObject(value: unknown): value is JsonObject {
+  return typeof value === "object" && value !== null && !Array.isArray(value)
+}
+
+function coerceNumber(value: unknown, fallback = 0): number {
+  if (typeof value === "number" && Number.isFinite(value)) return value
+  if (typeof value === "string" && value.trim() !== "") {
+    const parsed = Number(value)
+    if (Number.isFinite(parsed)) return parsed
+  }
+  return fallback
+}
+
+function firstFiniteNumber(...values: unknown[]): number | null {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) return value
+    if (typeof value === "string" && value.trim() !== "") {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) return parsed
+    }
+  }
+  return null
+}
+
+function coerceNullableString(value: unknown): string | null {
+  return typeof value === "string" ? value : null
+}
+
+function normalizeActivePass(value: unknown): ActivePass | null {
+  if (!isJsonObject(value)) return null
+
+  return {
+    id: typeof value.id === "string" ? value.id : "",
+    userId: typeof value.userId === "string" ? value.userId : "",
+    status: typeof value.status === "string" ? value.status : "",
+    creditsUsed: coerceNumber(value.creditsUsed),
+    creditsReserved: coerceNumber(value.creditsReserved),
+    creditsTotal: coerceNumber(value.creditsTotal),
+    expiresAt: coerceNullableString(value.expiresAt),
+    purchasedAt: coerceNullableString(value.purchasedAt),
+  }
+}
+
+function normalizeCustomerBonoStatus(payload: unknown): CustomerBonoStatus {
+  const data = isJsonObject(payload) ? payload : {}
+  const pass = normalizeActivePass(data.pass)
+  const rawState = data.state
+  const state: CustomerBonoStatus["state"] =
+    rawState === "active" || rawState === "pending" || rawState === "none"
+      ? rawState
+      : pass?.status === "active"
+        ? "active"
+        : pass?.status === "pending"
+          ? "pending"
+          : "none"
+
+  const computedAvailable = pass
+    ? Math.max(0, pass.creditsTotal - pass.creditsUsed - pass.creditsReserved)
+    : 0
+  const availableFromPass = pass && pass.creditsTotal > 0 ? computedAvailable : null
+  const explicitAvailable = firstFiniteNumber(
+    data.creditsAvailable,
+    data.creditsRemaining,
+    data.availableCredits,
+    data.remaining,
+  )
+
+  return {
+    state,
+    pass,
+    creditsAvailable:
+      state === "active" && pass
+        ? Math.max(0, availableFromPass ?? explicitAvailable ?? 0)
+        : 0,
+  }
+}
+
 /**
  * Lee el estado del bono de un cliente. Lo usamos al abrir el modal de
  * canje para mostrar al barista cuántos cafés le quedan al cliente.
@@ -219,7 +299,7 @@ export async function fetchCustomerBonoStatus(
     )
     const json = await res.json()
     if (!res.ok) return { ok: false, error: json as ExamPassError }
-    return { ok: true, data: json as CustomerBonoStatus }
+    return { ok: true, data: normalizeCustomerBonoStatus(json) }
   } catch (err) {
     return {
       ok: false,

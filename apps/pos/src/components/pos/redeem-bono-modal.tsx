@@ -270,6 +270,7 @@ export function RedeemBonoModal({
   const milkOK = !milkRequired || milkId !== null
   const customerHasUsable =
     status?.state === "active" &&
+    !!status.pass &&
     status.creditsAvailable > 0
   // paymentMethod solo es obligatorio cuando hay total > 0. Para canjes 0 €
   // (café solo sin extras) el botón "Servir café" debe poder pulsarse sin
