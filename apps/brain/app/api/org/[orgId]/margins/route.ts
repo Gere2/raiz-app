@@ -24,7 +24,7 @@ export async function GET(req: NextRequest, { params }: Params) {
     const [skusSnap, ticketsSnap, ordersSnap, productsSnap, categoriesSnap, recipesSnap] =
       await Promise.all([
         db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.SKUS).get(),
-        db.collection(COLLECTIONS.TICKETS).where("orgId", "==", orgId).where("createdAt", ">=", since).get(),
+        db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.TICKETS).where("createdAt", ">=", since).get(),
         db.collection(COLLECTIONS.ORDERS).where("orgId", "==", orgId).where("createdAt", ">=", since).get(),
         db.collection(COLLECTIONS.PRODUCTS).where("orgId", "==", orgId).get(),
         db.collection(COLLECTIONS.CATEGORIES).where("orgId", "==", orgId).get(),
@@ -79,14 +79,17 @@ export async function GET(req: NextRequest, { params }: Params) {
     const processItems = (items: Record<string, unknown>[], date: Date) => {
       const weekKey = getWeekKey(date);
       for (const item of items) {
-        const pid = (item.productId || "") as string;
+        // Schema vivo (subcolección): { product: {id,name,price,category}, quantity }.
+        // Schema legacy (top-level): { productId, qty, unitPrice, productName }.
+        const product = (item.product || {}) as Record<string, unknown>;
+        const pid = (item.productId || product.id || "") as string;
         if (!pid) continue;
         const qty = Number(item.qty) || Number(item.quantity) || 1;
-        const price = Number(item.unitPrice) || Number(item.price) || 0;
+        const price = Number(item.unitPrice) || Number(item.price) || Number(product.price) || 0;
         if (!productData[pid]) {
           const meta = productMeta[pid];
           productData[pid] = {
-            name: meta?.name || (item.productName as string) || pid,
+            name: meta?.name || (item.productName as string) || (product.name as string) || pid,
             category: meta?.category || "Sin categoría",
             qty: 0, revenue: 0, weeklyData: {},
           };

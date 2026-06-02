@@ -32,7 +32,10 @@ export async function GET(req: NextRequest, { params }: Params) {
         db.collection("orgs").doc(orgId).collection("skus").get(),
         db.collection("orgs").doc(orgId).collection("recipes").get(),
         db.collection("orgs").doc(orgId).collection("catalog").get(),
-        db.collection("tickets").where("orgId", "==", orgId).where("createdAt", ">=", since).get(),
+        // tickets viven en la subcolección org-scoped (el POS migró ahí ~mar-2026;
+        // la colección top-level "tickets" quedó congelada). Org-scoped por path →
+        // sin necesidad de campo orgId ni índice compuesto.
+        db.collection("orgs").doc(orgId).collection("tickets").where("createdAt", ">=", since).get(),
         db.collection("orders").where("orgId", "==", orgId).where("createdAt", ">=", since).get(),
         db.collection("orgs").doc(orgId).collection("products").get(),
       ]);
@@ -57,10 +60,13 @@ export async function GET(req: NextRequest, { params }: Params) {
 
     const processSaleItems = (items: Record<string, unknown>[]) => {
       for (const item of items) {
-        const pid = (item.productId || "") as string;
-        const name = (item.productName || item.name || "") as string;
-        const qty = Number(item.qty) || 1;
-        const price = Number(item.unitPrice) || Number(item.price) || 0;
+        // Schema vivo (subcolección): item = { product: {id,name,price,...}, quantity }.
+        // Schema legacy (top-level congelado): item = { productId, productName, qty, unitPrice }.
+        const product = (item.product || {}) as Record<string, unknown>;
+        const pid = (item.productId || product.id || "") as string;
+        const name = (item.productName || item.name || product.name || "") as string;
+        const qty = Number(item.qty) || Number(item.quantity) || 1;
+        const price = Number(item.unitPrice) || Number(item.price) || Number(product.price) || 0;
         const key = pid || name;
         if (!key) continue;
         if (!productSales[key]) productSales[key] = { name, qty: 0, revenue: 0 };
