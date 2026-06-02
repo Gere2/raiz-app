@@ -47,6 +47,10 @@ interface UndoAction {
 export default function POSPageFullscreen() {
   const { user } = useAuth()
   const { orgId } = useOrg(user)
+  // Solo Raíz tiene pedidos online (APP/TEACHER_APP) en las colecciones top-level
+  // `orders`/`teacher_orders`. Para otros cafés (enverde) esos listeners darían
+  // permission-denied (ruido en consola) y la UI no aplica → la ocultamos.
+  const isRaiz = orgId === "raiz_y_grano"
   const { user: authUser, isLoading: authLoading } = useSimpleAuth()
   const router = useRouter()
 
@@ -400,6 +404,7 @@ export default function POSPageFullscreen() {
             >
               <Zap className="h-5 w-5" />
             </button>
+            {isRaiz && (
             <button
               className={`relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors ${showAppOrders ? "bg-white/25" : "hover:bg-white/10"}`}
               onClick={() => setShowAppOrders(!showAppOrders)}
@@ -424,6 +429,7 @@ export default function POSPageFullscreen() {
                 </span>
               )}
             </button>
+            )}
             <button
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10"
               onClick={() => setShowGrantBonoModal(true)}
@@ -781,7 +787,7 @@ export default function POSPageFullscreen() {
       {/* ═══════ OVERLAYS ═══════ */}
 
       {/* App Orders Panel */}
-      {showAppOrders && (
+      {isRaiz && showAppOrders && (
         <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAppOrders(false)} />
           <div className="relative w-full max-w-lg bg-white shadow-2xl animate-in slide-in-from-right duration-300">
@@ -828,11 +834,11 @@ export default function POSPageFullscreen() {
         />
       )}
 
-      <OrderNotifications />
+      {isRaiz && <OrderNotifications />}
       {/* Listener permanente de pedidos APP. Mantiene el badge del botón
           Smartphone actualizado y dispara toast + sonido al entrar uno
-          nuevo, para que el barista reaccione sin abrir el panel. */}
-      <AppOrdersWatcher onCountChange={setActiveAppOrdersCount} />
+          nuevo, para que el barista reaccione sin abrir el panel. Solo Raíz. */}
+      {isRaiz && <AppOrdersWatcher onCountChange={setActiveAppOrdersCount} />}
       <Toaster />
     </>
   )
