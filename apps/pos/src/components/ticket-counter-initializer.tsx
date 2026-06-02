@@ -23,8 +23,8 @@ export function TicketCounterInitializer() {
         // Obtener el último número de ticket
         const lastNumber = await getLastTicketNumber(orgId)
 
-        // Inicializar el contador con el último número + 1
-        await initializeTicketCounter(lastNumber + 1)
+        // Inicializar el contador (org-scoped) con el último número + 1
+        await initializeTicketCounter(orgId, lastNumber + 1)
 
         setInitialized(true)
       } catch (error) {

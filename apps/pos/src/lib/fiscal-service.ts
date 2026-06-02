@@ -6,6 +6,17 @@ const CONFIG_COLLECTION = "config"
 const COUNTER_DOC = "ticketCounter"
 const FISCAL_DOC = "fiscalData"
 
+// Multi-tenant: cada café numera sus tickets en su propia subcolección
+// `orgs/{orgId}/config/ticketCounter` (las reglas permiten read/write a un
+// miembro de la org). Raíz y Grano (single-tenant original) sigue en el doc
+// TOP-LEVEL `config/ticketCounter` (gateado por isAdmin) para NO alterar su
+// numeración fiscal. Espeja el shim de product-service (`LEGACY_TOPLEVEL_ORG`).
+const LEGACY_TOPLEVEL_ORG = "raiz_y_grano"
+const counterRef = (orgId: string) =>
+  orgId === LEGACY_TOPLEVEL_ORG
+    ? doc(db, CONFIG_COLLECTION, COUNTER_DOC)
+    : doc(db, "orgs", orgId, CONFIG_COLLECTION, COUNTER_DOC)
+
 // Definir el tipo FiscalData
 export type FiscalData = {
   businessName: string
@@ -17,16 +28,16 @@ export type FiscalData = {
 }
 
 // Inicializar el contador si no existe
-export const initializeTicketCounter = async (startFrom = 1): Promise<void> => {
+export const initializeTicketCounter = async (orgId: string, startFrom = 1): Promise<void> => {
   if (!db) throw new Error("Firestore no está inicializado")
+  if (!orgId) throw new Error("orgId es requerido")
 
   try {
-    // Usar la colección 'config' para el documento 'ticketCounter'
-    const counterRef = doc(db, CONFIG_COLLECTION, COUNTER_DOC)
-    const counterSnap = await getDoc(counterRef)
+    const ref = counterRef(orgId)
+    const counterSnap = await getDoc(ref)
 
     if (!counterSnap.exists()) {
-      await setDoc(counterRef, { ticketNumber: startFrom })
+      await setDoc(ref, { ticketNumber: startFrom })
     }
   } catch (error: any) {
     console.error("Error al inicializar contador de tickets:", error)
@@ -41,23 +52,24 @@ export const initializeTicketCounter = async (startFrom = 1): Promise<void> => {
 }
 
 // Obtener el siguiente número de ticket (atómico — usa runTransaction)
-export const getNextTicketNumber = async (): Promise<number> => {
+export const getNextTicketNumber = async (orgId: string): Promise<number> => {
   if (!db) throw new Error("Firestore no está inicializado")
+  if (!orgId) throw new Error("orgId es requerido")
 
   try {
-    const counterRef = doc(db, CONFIG_COLLECTION, COUNTER_DOC)
+    const ref = counterRef(orgId)
 
     const nextNumber = await runTransaction(db, async (tx) => {
-      const counterSnap = await tx.get(counterRef)
+      const counterSnap = await tx.get(ref)
 
       if (!counterSnap.exists()) {
-        tx.set(counterRef, { ticketNumber: 1 })
+        tx.set(ref, { ticketNumber: 1 })
         return 1
       }
 
       const current = counterSnap.data()?.ticketNumber || 0
       const next = current + 1
-      tx.update(counterRef, { ticketNumber: next })
+      tx.update(ref, { ticketNumber: next })
       return next
     })
 

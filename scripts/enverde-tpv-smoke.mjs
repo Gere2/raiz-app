@@ -72,12 +72,13 @@ async function mintIdToken() {
 
 async function cleanup() {
   const orgRef = db.collection("orgs").doc(ORG);
-  for (const sub of ["products", "categories", "recipes", "tickets", "members", "skus"]) {
+  for (const sub of ["products", "categories", "recipes", "tickets", "members", "skus", "config"]) {
     const snap = await orgRef.collection(sub).get();
     await Promise.all(snap.docs.map((d) => d.ref.delete()));
   }
   await orgRef.delete().catch(() => {});
   await db.collection("users").doc(UID).delete().catch(() => {});
+  await db.collection("config").doc("enverde-smoke-probe").delete().catch(() => {}); // por si el control negativo escribiera
   try { await adminAuth.deleteUser(UID); } catch {}
 }
 
@@ -129,6 +130,36 @@ if (mode === "margins") {
   }
   if (!(m.items || []).length) log(`    (sin ventas todavía — vende el Cortado en ${POS_BASE}/pos y reintenta)`);
   process.exit(0);
+}
+
+if (mode === "counter") {
+  // Prueba contra las REGLAS de prod (no Admin SDK): el café usa SU idToken para
+  // escribir vía Firestore REST. Confirma que numera tickets en su subcolección
+  // org-scoped (allowed por isOrgMember) y que NO puede tocar el config top-level
+  // de Raíz (allow write: isAdmin) → por eso Raíz va aparte. Nunca toca el contador
+  // real: el control negativo usa un doc basura.
+  await provision();
+  const { idToken } = await mintIdToken();
+  const FS = `https://firestore.googleapis.com/v1/projects/${sa.project_id}/databases/(default)/documents`;
+  const hdr = { Authorization: `Bearer ${idToken}`, "Content-Type": "application/json" };
+
+  const put = await fetch(`${FS}/orgs/${ORG}/config/ticketCounter`, {
+    method: "PATCH", headers: hdr, body: JSON.stringify({ fields: { ticketNumber: { integerValue: "7" } } }),
+  });
+  log(`1) PATCH orgs/${ORG}/config/ticketCounter (como el café) → HTTP ${put.status} ${put.status === 200 ? "✓ permitido (isOrgMember)" : "✗"}`);
+  const gj = await (await fetch(`${FS}/orgs/${ORG}/config/ticketCounter`, { headers: hdr })).json().catch(() => ({}));
+  const val = gj?.fields?.ticketNumber?.integerValue;
+  log(`   GET → ticketNumber=${val}`);
+
+  const denied = await fetch(`${FS}/config/enverde-smoke-probe`, {
+    method: "PATCH", headers: hdr, body: JSON.stringify({ fields: { x: { integerValue: "1" } } }),
+  });
+  log(`2) PATCH config/enverde-smoke-probe top-level (como el café) → HTTP ${denied.status} ${denied.status === 403 ? "✓ denegado (isAdmin) — por eso Raíz va aparte" : "⚠️"}`);
+
+  const ok = put.status === 200 && val === "7" && denied.status === 403;
+  log(`\nRESULTADO: ${ok ? "✅ el café numera en SU subcolección (allowed) y NO toca el config top-level de Raíz (denied). Org-scoping correcto bajo las reglas de prod." : "⚠️ revisar arriba."}`);
+  log(`\nLimpia con: node scripts/enverde-tpv-smoke.mjs cleanup`);
+  process.exit(ok ? 0 : 1);
 }
 
 // mode === "link" (default): provisiona + enlace + verificación del camino de datos

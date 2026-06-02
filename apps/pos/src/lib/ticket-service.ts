@@ -104,7 +104,7 @@ export const addTicket = async (
       const modCost = (item.modifiers || []).reduce((s, m) => s + (m.priceAdjustment || 0), 0)
       return sum + (item.product.price + modCost) * item.quantity
     }, 0)
-    const ticketNumber = await getNextTicketNumber() // Consider making this multi-tenant too
+    const ticketNumber = await getNextTicketNumber(orgId) // org-scoped; Raíz sigue en el contador top-level
     const fiscalData = await getFiscalData()
 
     // ── Enriquecer datos (incluye weather + calendario) ──

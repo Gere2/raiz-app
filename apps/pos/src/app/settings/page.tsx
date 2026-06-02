@@ -156,7 +156,8 @@ export default function SettingsPage() {
 
     try {
       setSavingCounter(true)
-      await initializeTicketCounter(ticketCounter)
+      if (!orgId) throw new Error("No hay café seleccionado")
+      await initializeTicketCounter(orgId, ticketCounter)
       toast({
         title: "Contador inicializado",
         description: `El contador de tickets se ha inicializado en ${ticketCounter}`,
