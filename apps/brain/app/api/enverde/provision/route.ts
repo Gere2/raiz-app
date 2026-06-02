@@ -95,6 +95,14 @@ export async function POST(req: Request) {
       },
       { merge: true }
     );
+    // El POS resuelve la org del usuario vía `users/{uid}.orgIds` (no vía members),
+    // así que el café necesita AMBOS para operar en brain (members) y POS (orgIds).
+    // arrayUnion no pisa otras orgs. NOTA: orgIds es solo selección de org en el POS;
+    // el acceso a datos sigue gateado por orgs/{id}/members en las reglas Firestore.
+    await db.collection("users").doc(uid).set(
+      { uid, orgIds: FieldValue.arrayUnion(orgId), updatedAt: FieldValue.serverTimestamp() },
+      { merge: true }
+    );
 
     /* ─── 2) Assumptions por defecto (café-genérico) + target ── */
     await ensureDefaultAssumptions(orgId);

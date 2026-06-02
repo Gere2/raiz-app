@@ -26,8 +26,8 @@ export async function GET(req: NextRequest, { params }: Params) {
         db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.SKUS).get(),
         db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.TICKETS).where("createdAt", ">=", since).get(),
         db.collection(COLLECTIONS.ORDERS).where("orgId", "==", orgId).where("createdAt", ">=", since).get(),
-        db.collection(COLLECTIONS.PRODUCTS).where("orgId", "==", orgId).get(),
-        db.collection(COLLECTIONS.CATEGORIES).where("orgId", "==", orgId).get(),
+        db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.PRODUCTS).get(),
+        db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.CATEGORIES).get(),
         db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.RECIPES).get(),
       ]);
 
