@@ -35,17 +35,30 @@ export type Category = {
   updatedAt?: Timestamp
 }
 
-// Colecciones — MULTI-TENANT: products/categories viven en la subcolección
-// org-scoped `orgs/{orgId}/{products|categories}` (igual que tickets). Cada café
-// ve solo su catálogo. La caché también se prefija por orgId para no filtrar
-// entre cafés en una misma sesión.
+// Colecciones — MULTI-TENANT: cada café ve solo su catálogo en la subcolección
+// org-scoped `orgs/{orgId}/{products|categories}` (igual que tickets). La caché
+// también se prefija por orgId para no filtrar entre cafés en una misma sesión.
 const PRODUCTS_COLLECTION = "products"
 const CATEGORIES_COLLECTION = "categories"
 
-const productsCol = (orgId: string) => collection(db, "orgs", orgId, PRODUCTS_COLLECTION)
-const productDoc = (orgId: string, id: string) => doc(db, "orgs", orgId, PRODUCTS_COLLECTION, id)
-const categoriesCol = (orgId: string) => collection(db, "orgs", orgId, CATEGORIES_COLLECTION)
-const categoryDoc = (orgId: string, id: string) => doc(db, "orgs", orgId, CATEGORIES_COLLECTION, id)
+// Puente de migración: Raíz y Grano (la org original, single-tenant) tiene su
+// catálogo en las colecciones TOP-LEVEL `products`/`categories`, que leen también
+// la PWA de cliente (Stripe-live) y varias rutas del brain. Hasta migrar esos
+// datos + lectores, Raíz opera contra top-level (comportamiento IDÉNTICO a hoy →
+// cero riesgo de ventas) y cualquier otro café (enverde) va aislado en su
+// subcolección. Quitar esta const cuando Raíz esté migrada (ver memoria
+// project_raiz_app_backend: "GATE antes de tocar Raíz").
+const LEGACY_TOPLEVEL_ORG = "raiz_y_grano"
+const isLegacyTopLevel = (orgId: string) => orgId === LEGACY_TOPLEVEL_ORG
+
+const productsCol = (orgId: string) =>
+  isLegacyTopLevel(orgId) ? collection(db, PRODUCTS_COLLECTION) : collection(db, "orgs", orgId, PRODUCTS_COLLECTION)
+const productDoc = (orgId: string, id: string) =>
+  isLegacyTopLevel(orgId) ? doc(db, PRODUCTS_COLLECTION, id) : doc(db, "orgs", orgId, PRODUCTS_COLLECTION, id)
+const categoriesCol = (orgId: string) =>
+  isLegacyTopLevel(orgId) ? collection(db, CATEGORIES_COLLECTION) : collection(db, "orgs", orgId, CATEGORIES_COLLECTION)
+const categoryDoc = (orgId: string, id: string) =>
+  isLegacyTopLevel(orgId) ? doc(db, CATEGORIES_COLLECTION, id) : doc(db, "orgs", orgId, CATEGORIES_COLLECTION, id)
 
 const requireOrg = (orgId: string) => {
   if (!db) throw new Error("Firestore no está inicializado")
