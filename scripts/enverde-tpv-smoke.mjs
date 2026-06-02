@@ -37,6 +37,7 @@ const POS_BASE = "https://pos.raizygrano.com";
 const BRAIN_BASE = "https://brain.raizygrano.com";
 const ORG = "enverde-tpv-smoke";
 const UID = `enverde_${ORG}`;
+const ORG_NAME = "TPV smoke test (borrar)";
 const log = (...a) => console.log(...a);
 const eur = (n) => `${(Math.round(n * 100) / 100).toFixed(2)} €`;
 
@@ -49,9 +50,13 @@ const RECIPE = { id: "r-cortado", productId: PROD.id, name: "Cortado", totalCost
 
 async function provision() {
   const orgRef = db.collection("orgs").doc(ORG);
-  await orgRef.set({ name: "TPV smoke test (borrar)", source: "enverde", createdAt: new Date() }, { merge: true });
+  await orgRef.set({ name: ORG_NAME, source: "enverde", createdAt: new Date() }, { merge: true });
   await orgRef.collection("members").doc(UID).set({ role: "owner", active: true, source: "enverde" }, { merge: true });
   await db.collection("users").doc(UID).set({ uid: UID, orgIds: [ORG] }, { merge: true });
+  // Espejo de /api/enverde/provision: displayName=orgName en el user del bridge
+  // (así el ticket del POS usa user.displayName y userName lleva el nombre del café).
+  try { await adminAuth.updateUser(UID, { displayName: ORG_NAME }); }
+  catch { try { await adminAuth.createUser({ uid: UID, displayName: ORG_NAME }); } catch {} }
 }
 
 async function mintIdToken() {
@@ -138,12 +143,15 @@ log(`\n2) ENLACE "Abrir TPV" (canjeable ~1h):\n${link}\n`);
 const payload = JSON.parse(Buffer.from(idToken.split(".")[1], "base64").toString("utf-8"));
 log(`3) Token canjeado ✓  uid=${payload.user_id || payload.sub}  claims: enverde=${payload.enverde} orgId=${payload.orgId}`);
 
+const rec = await adminAuth.getUser(UID);
+log(`3b) Perfil de auth del café: displayName=${JSON.stringify(rec.displayName)}  ·  idToken name=${JSON.stringify(payload.name)}  (esperado ${JSON.stringify(ORG_NAME)} → el POS usa user.displayName como userName del ticket)`);
+
 const mo = await fetch(`${POS_BASE}/api/my-orgs`, { headers: { Authorization: `Bearer ${idToken}` } });
 const moBody = await mo.json().catch(() => ({}));
 log(`4) POS /api/my-orgs (DESPLEGADA) → HTTP ${mo.status}  ${JSON.stringify(moBody)}`);
 
-const ok = mo.status === 200 && Array.isArray(moBody.orgs) && moBody.orgs.some((o) => o.id === ORG) && payload.orgId === ORG;
-log(`\nRESULTADO: ${ok ? "✅ camino de datos REAL probado contra prod. Solo falta tu click para confirmar el render." : "⚠️ revisar lo de arriba."}`);
+const ok = mo.status === 200 && Array.isArray(moBody.orgs) && moBody.orgs.some((o) => o.id === ORG) && payload.orgId === ORG && rec.displayName === ORG_NAME;
+log(`\nRESULTADO: ${ok ? "✅ camino de datos REAL + displayName del café probados contra prod. Solo falta tu click para confirmar el render." : "⚠️ revisar lo de arriba."}`);
 log(`\nSiguiente:  node scripts/enverde-tpv-smoke.mjs seed   (catálogo + escandallo para el loop venta→márgenes)`);
 log(`Al terminar: node scripts/enverde-tpv-smoke.mjs cleanup`);
 process.exit(ok ? 0 : 1);

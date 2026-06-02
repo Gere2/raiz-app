@@ -104,6 +104,22 @@ export async function POST(req: Request) {
       { merge: true }
     );
 
+    /* ─── 1b) Perfil de auth: displayName = nombre del café ──────
+     * El user del bridge (enverde_<orgId>) nace SIN displayName/email, así que el
+     * POS escribía el ticket con userName vacío. Fijamos displayName=orgName para
+     * que tickets/recibos lleven el nombre del café. La cuenta puede no existir aún
+     * (createCustomToken no la crea → se materializa en el primer signIn), de ahí
+     * updateUser→createUser. No bloqueante: si falla, la provisión continúa. */
+    try {
+      await adminAuth.updateUser(uid, { displayName: orgName });
+    } catch {
+      try {
+        await adminAuth.createUser({ uid, displayName: orgName });
+      } catch (e) {
+        console.warn("enverde provision: no se pudo fijar displayName", (e as { message?: string })?.message);
+      }
+    }
+
     /* ─── 2) Assumptions por defecto (café-genérico) + target ── */
     await ensureDefaultAssumptions(orgId);
     if (salaryTarget) {
