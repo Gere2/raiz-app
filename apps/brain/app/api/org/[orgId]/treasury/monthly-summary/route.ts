@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { db, FieldValue } from "@/lib/firebase-admin";
 import { loadAccruals, loadAssumptions } from "@/lib/treasury/store";
 import {
@@ -9,7 +9,7 @@ import {
   type MonthlySnapshot,
 } from "@/lib/treasury/monthly-aggregator";
 import { deriveCashMonth } from "@/lib/treasury/classify";
-import { generateCFOSummary, type CFOSummary } from "@/lib/treasury/cfo-summary";
+import { generateCFOSummary, type CFOSummary, type CFOProfile } from "@/lib/treasury/cfo-summary";
 
 type Params = { params: Promise<{ orgId: string }> };
 
@@ -38,6 +38,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json().catch(() => ({}));
 
     const month = body.month;
@@ -148,8 +149,30 @@ export async function POST(req: Request, { params }: Params) {
       }
     }
 
+    /* ─── Perfil CFO de la org (des-Raíz-ificación, T2) ───── */
+    // Raíz (sin estos campos) → profile undefined → prompt legacy intacto.
+    // enverde (source="enverde" o con founderName) → prompt parametrizado.
+    const orgSnap = await db.collection("orgs").doc(orgId).get();
+    const orgData = orgSnap.data() ?? {};
+    let profile: CFOProfile | undefined;
+    if (orgData.source === "enverde" || orgData.founderName) {
+      profile = {
+        businessName: (orgData.name as string) || "tu negocio",
+        businessDescription: orgData.businessType
+          ? `una ${orgData.businessType as string}`
+          : "una cafetería de especialidad",
+        founderName: (orgData.founderName as string) || "el fundador",
+        currency: "€",
+        defaultSalary: assumptions.foundersSalary,
+        salaryTarget: assumptions.foundersSalaryTarget,
+        foodCostTarget: assumptions.foodCostTarget,
+        foodCostUpper: assumptions.foodCostUpper,
+        grossMarginTarget: assumptions.grossMarginTarget,
+      };
+    }
+
     /* ─── Llamada a Claude ────────────────────────────────── */
-    const summary = await generateCFOSummary(snapshot, { previousSnapshot });
+    const summary = await generateCFOSummary(snapshot, { previousSnapshot, profile });
 
     /* ─── Persiste cache ──────────────────────────────────── */
     await cacheRef.set(
@@ -186,6 +209,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const url = new URL(req.url);
     const month = url.searchParams.get("month");
     if (!month || !isValidMonthId(month)) {

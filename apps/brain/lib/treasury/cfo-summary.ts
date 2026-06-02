@@ -80,6 +80,64 @@ OUTPUT: SOLO JSON válido, sin markdown, sin comentarios, con esta forma exacta:
   "queFaltaVerde": "..."
 }`;
 
+/* ─── Perfil de negocio (des-Raíz-ificación, T2) ─────────────
+ *
+ * SYSTEM_PROMPT (arriba) es el prompt LEGACY de Raíz y Grano y se mantiene
+ * byte-idéntico: es el default cuando no llega `profile` (preserva el
+ * comportamiento y el prompt-cache de Raíz). Las orgs de enverde pasan un
+ * CFOProfile y obtienen un prompt parametrizado vía buildSystemPrompt().
+ */
+export type CFOProfile = {
+  businessName: string; // p. ej. "Café Luna"
+  businessDescription: string; // p. ej. "una cafetería de especialidad"
+  founderName: string; // p. ej. "Marta"
+  currency: string; // p. ej. "€"
+  defaultSalary: number; // foundersSalary
+  salaryTarget: number; // foundersSalaryTarget
+  foodCostTarget: number; // 0..1 (0.30)
+  foodCostUpper: number; // 0..1 (0.40)
+  grossMarginTarget: number; // 0..1 (0.70)
+};
+
+export function buildSystemPrompt(p: CFOProfile): string {
+  const fcTarget = Math.round(p.foodCostTarget * 100);
+  const fcUpper = Math.round(p.foodCostUpper * 100);
+  const gm = Math.round(p.grossMarginTarget * 100);
+  return `Eres el CFO operativo de ${p.businessName}, ${p.businessDescription}. El fundador es ${p.founderName}, que opera el negocio día a día.
+
+Tu trabajo este turno: leer un snapshot financiero mensual ya calculado por nuestro sistema (Treasury Truth Layer) y devolver una interpretación narrativa en 7 bloques. La interpretación debe ser HONESTA. No maquillas, no inflas, no minimizas. Si las ventas suben pero la caja se hunde por costes acumulados, lo dices. Si ${p.founderName} se puede pagar el sueldo objetivo con holgura, lo dices con cifras. Si no, también.
+
+REGLAS DE ESCRITURA:
+- Cada bloque es 1-3 frases máximo, en español castellano natural y directo.
+- Nunca uses emojis ni viñetas dentro de los bloques.
+- Nombra cifras concretas (${p.currency}, %) — no abstractas.
+- Si un dato falta o es ambiguo, dilo (ej. "el food cost real depende de desglosar las tarjetas pendientes").
+- Tutea al fundador. ${p.founderName} es la persona, no "el fundador".
+- "Verde / amarillo / rojo" se refiere al semáforo del mes con un sueldo aplicado.
+- El campo JSON "sueldoGeremi" se refiere a cuánto puede cobrar ${p.founderName} este mes (el nombre del campo es heredado del sistema; no lo cambies, pero su contenido es sobre ${p.founderName}).
+
+CONTEXTO FIJO QUE NO DEBES OLVIDAR:
+- El TPV (datáfono) liquida las ventas con tarjeta en la cuenta bancaria, normalmente agregadas por día o por lote.
+- La cuenta operativa es donde se cargan compras a proveedores, transferencias, impuestos (AEAT), Seguridad Social, suministros, tecnología, etc.
+- Las tarjetas de empresa suelen liquidarse en bloque a fin de mes y necesitan el extracto detallado para imputar cada compra — hasta entonces no entran como gasto operativo definitivo.
+- Sueldo de ${p.founderName}: el sistema imputa por defecto ${p.defaultSalary} ${p.currency}/mes y el usuario puede sobrescribir por mes. Sueldo objetivo actual: ${p.salaryTarget} ${p.currency}.
+- Food cost objetivo: ${fcTarget} %. Alerta: ${fcTarget}-${fcUpper} %. Peligro: > ${fcUpper} %.
+- Margen bruto objetivo: ${gm} % sobre ventas con tarjeta (TPV).
+- Si la caja es negativa pero el económico positivo, suele significar que pagaste cuotas fiscales trimestrales acumuladas o tarjetas en bloque ese mes.
+- Si el económico es negativo pero la caja positiva, suele significar que aplazaste pagos (accruals pendientes, facturas sin pagar) — el banco está ok pero el negocio está perdiendo.
+
+OUTPUT: SOLO JSON válido, sin markdown, sin comentarios, con esta forma exacta:
+{
+  "quePaso": "...",
+  "porquePaso": "...",
+  "queBien": "...",
+  "quePreocupa": "...",
+  "queDecision": "...",
+  "sueldoGeremi": "...",
+  "queFaltaVerde": "..."
+}`;
+}
+
 /* ─── Construye el user prompt con los datos del snapshot ──── */
 
 function buildUserPrompt(
@@ -177,10 +235,13 @@ function buildUserPrompt(
 
 export async function generateCFOSummary(
   snapshot: MonthlySnapshot,
-  options: { previousSnapshot?: MonthlySnapshot; apiKey?: string } = {}
+  options: { previousSnapshot?: MonthlySnapshot; apiKey?: string; profile?: CFOProfile } = {}
 ): Promise<CFOSummary> {
   const apiKey = options.apiKey ?? process.env.ANTHROPIC_API_KEY;
   if (!apiKey) throw new Error("ANTHROPIC_API_KEY no configurada");
+
+  // Raíz (sin profile) usa el SYSTEM_PROMPT legacy byte-idéntico; enverde pasa profile.
+  const systemPrompt = options.profile ? buildSystemPrompt(options.profile) : SYSTEM_PROMPT;
 
   const userPrompt = buildUserPrompt(snapshot, options.previousSnapshot);
 
@@ -199,7 +260,7 @@ export async function generateCFOSummary(
       system: [
         {
           type: "text",
-          text: SYSTEM_PROMPT,
+          text: systemPrompt,
           cache_control: { type: "ephemeral" },
         },
       ],
