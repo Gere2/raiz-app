@@ -43,6 +43,7 @@ export async function createOrder(input: CreateOrderInput) {
   const orderData = {
     ...enrichData,
     source: "APP",
+    orgId: "raiz_y_grano", // single-tenant: el dashboard/margins del brain filtra por orgId
     customerUid: input.userId,
     customerName: input.customerName,
     customerEmail: input.customerEmail,
