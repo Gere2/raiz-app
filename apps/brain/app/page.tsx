@@ -752,7 +752,7 @@ export default function BrainApp() {
         {section === "quizzes" && user && orgId && <QuizzesSection user={user} orgId={orgId} />}
 
         {/* ═══════ MISSIONS (NEW) ═══════ */}
-        {section === "missions" && user && orgId && <MissionsSection orgId={orgId} />}
+        {section === "missions" && user && orgId && <MissionsSection user={user} orgId={orgId} authedFetch={authedFetch} />}
 
         {/* ═══════ MARGINS DASHBOARD ═══════ */}
         {section === "margins" && user && orgId && (

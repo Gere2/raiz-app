@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import type { User } from "firebase/auth"
 
 interface MissionCriterion {
   type: string
@@ -47,7 +48,11 @@ const CRITERION_LABELS: Record<string, string> = {
   invite_friend: "Invitar amigo",
 }
 
-export default function MissionsSection({ orgId }: { orgId: string }) {
+export default function MissionsSection({ user, orgId, authedFetch }: {
+  user: User
+  orgId: string
+  authedFetch: (user: User, path: string, init?: RequestInit) => Promise<Response>
+}) {
   const [missions, setMissions] = useState<Mission[]>([])
   const [loading, setLoading] = useState(true)
   const [seeding, setSeeding] = useState(false)
@@ -65,7 +70,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
 
   const fetchMissions = useCallback(async () => {
     try {
-      const res = await fetch(`/api/org/${orgId}/missions`)
+      const res = await authedFetch(user, `/api/org/${orgId}/missions`)
       const data = await res.json()
       setMissions(data.missions || [])
     } catch (err) {
@@ -80,7 +85,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
   const handleSeed = async () => {
     setSeeding(true)
     try {
-      await fetch(`/api/org/${orgId}/missions/seed`, { method: "POST" })
+      await authedFetch(user, `/api/org/${orgId}/missions/seed`, { method: "POST" })
       await fetchMissions()
     } finally {
       setSeeding(false)
@@ -89,7 +94,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
 
   const toggleEnabled = async (mission: Mission) => {
     try {
-      await fetch(`/api/org/${orgId}/missions/${mission.id}`, {
+      await authedFetch(user, `/api/org/${orgId}/missions/${mission.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ enabled: !mission.enabled }),
@@ -104,7 +109,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
 
   const updateReward = async (mission: Mission, reward: number) => {
     try {
-      await fetch(`/api/org/${orgId}/missions/${mission.id}`, {
+      await authedFetch(user, `/api/org/${orgId}/missions/${mission.id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ reward }),
@@ -119,7 +124,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
 
   const handleCreate = async () => {
     try {
-      const res = await fetch(`/api/org/${orgId}/missions`, {
+      const res = await authedFetch(user, `/api/org/${orgId}/missions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -146,7 +151,7 @@ export default function MissionsSection({ orgId }: { orgId: string }) {
   const deleteMission = async (mission: Mission) => {
     if (!confirm(`¿Eliminar misión "${mission.title}"?`)) return
     try {
-      await fetch(`/api/org/${orgId}/missions/${mission.id}`, { method: "DELETE" })
+      await authedFetch(user, `/api/org/${orgId}/missions/${mission.id}`, { method: "DELETE" })
       setMissions(prev => prev.filter(m => m.id !== mission.id))
     } catch (err) {
       console.error("Error deleting mission:", err)
