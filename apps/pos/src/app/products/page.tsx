@@ -21,11 +21,15 @@ import {
   type Product,
   type Category,
 } from "@/lib/product-service"
+import { useAuth } from "@/components/auth-provider"
+import { useOrg } from "@/hooks/useOrg"
 import { AuthenticatedLayout } from "@/components/authenticated-layout"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 
 export default function ProductsPage() {
+  const { user } = useAuth()
+  const { orgId } = useOrg(user)
   const [products, setProducts] = useState<Product[]>([])
   const [categories, setCategories] = useState<Category[]>([])
   const [searchTerm, setSearchTerm] = useState("")
@@ -43,12 +47,13 @@ export default function ProductsPage() {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
+    if (!orgId) return
     loadData()
-  }, [])
+  }, [orgId])
 
   const loadData = async () => {
     try {
-      const [productsData, categoriesData] = await Promise.all([getProducts(), getCategories()])
+      const [productsData, categoriesData] = await Promise.all([getProducts(orgId), getCategories(orgId)])
       setProducts(productsData)
       setCategories(categoriesData)
     } catch (error) {
@@ -72,7 +77,7 @@ export default function ProductsPage() {
     }
     setLoading(true)
     try {
-      await addProduct({
+      await addProduct(orgId, {
         name: formData.name,
         price: Number.parseFloat(formData.price),
         category: formData.category,
@@ -97,7 +102,7 @@ export default function ProductsPage() {
     }
     setLoading(true)
     try {
-      await updateProduct(currentProduct.id, {
+      await updateProduct(orgId, currentProduct.id, {
         name: formData.name,
         price: Number.parseFloat(formData.price),
         category: formData.category,
@@ -118,7 +123,7 @@ export default function ProductsPage() {
   const handleDeleteProduct = async (id: string) => {
     if (!confirm("¿Estás seguro de que quieres eliminar este producto?")) return
     try {
-      await deleteProduct(id)
+      await deleteProduct(orgId, id)
       await loadData()
       toast({ title: "Producto eliminado", description: "El producto se ha eliminado correctamente" })
     } catch (error) {
@@ -130,7 +135,7 @@ export default function ProductsPage() {
   const handleToggleAvailability = async (product: Product) => {
     const newVal = product.available === false ? true : false
     try {
-      await toggleProductAvailability(product.id, newVal)
+      await toggleProductAvailability(orgId, product.id, newVal)
       await loadData()
       toast({
         title: newVal ? "Visible en APP" : "Oculto en APP",

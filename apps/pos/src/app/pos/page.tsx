@@ -87,23 +87,30 @@ export default function POSPageFullscreen() {
   // Flash feedback
   const [flashId, setFlashId] = useState<string | null>(null)
 
-  // Initialize
+  // Peak mode + favorites are local (localStorage) — safe to load on mount.
   useEffect(() => {
-    loadData()
     loadPeakMode()
     loadFavorites()
   }, [])
+
+  // Data load waits for orgId: useOrg resolves it asynchronously and
+  // product-service now requires a non-empty orgId (multi-tenant). Re-runs
+  // if the active café changes.
+  useEffect(() => {
+    if (!orgId) return
+    loadData()
+  }, [orgId])
 
   const loadData = async () => {
     try {
       setLoading(true)
       // Camino crítico: solo categorías + productos de la primera categoría.
       // El barista ya puede empezar a vender en cuanto esto termine.
-      const cats = await getCategories()
+      const cats = await getCategories(orgId)
       setCategories(cats)
       if (cats.length > 0) {
         setActiveCategory(cats[0].id)
-        const catProds = await getProductsByCategory(cats[0].id)
+        const catProds = await getProductsByCategory(orgId, cats[0].id)
         setCategoryProducts(catProds)
       }
       setLoading(false)
@@ -111,7 +118,7 @@ export default function POSPageFullscreen() {
       // `allProducts` solo se usa en búsqueda, favoritos y resolución de
       // combos — todos secundarios al primer render. Lo traemos en
       // background; el barista no se queda esperando.
-      void getProducts()
+      void getProducts(orgId)
         .then((prods) => setAllProducts(prods))
         .catch((err) => {
           // Si falla, búsqueda y favoritos quedan vacíos hasta el siguiente
@@ -150,9 +157,9 @@ export default function POSPageFullscreen() {
     setActiveCategory(catId)
     setSearchTerm("")
     setIsSearching(false)
-    const prods = await getProductsByCategory(catId)
+    const prods = await getProductsByCategory(orgId, catId)
     setCategoryProducts(prods)
-  }, [])
+  }, [orgId])
 
   // Fast add — instant, no modal
   const fastAddProduct = useCallback((product: Product) => {

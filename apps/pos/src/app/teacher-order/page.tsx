@@ -17,9 +17,13 @@ import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { getProducts, getCategories, type Product, type Category } from "@/lib/product-service"
 import { createOrder, type DeliveryType } from "@/lib/orders-service"
+import { useAuth } from "@/components/auth-provider"
+import { useOrg } from "@/hooks/useOrg"
 
 export default function TeacherOrderPage() {
   const router = useRouter()
+  const { user } = useAuth()
+  const { orgId } = useOrg(user)
   const [activeTab, setActiveTab] = useState("")
   const [categories, setCategories] = useState<Category[]>([])
   const [products, setProducts] = useState<{ [key: string]: Product[] }>({})
@@ -41,13 +45,14 @@ export default function TeacherOrderPage() {
   >([])
 
   useEffect(() => {
+    if (!orgId) return
     loadData()
-  }, [])
+  }, [orgId])
 
   const loadData = async () => {
     try {
       setLoading(true)
-      const [cats, prods] = await Promise.all([getCategories(), getProducts()])
+      const [cats, prods] = await Promise.all([getCategories(orgId), getProducts(orgId)])
 
       setCategories(cats)
 
