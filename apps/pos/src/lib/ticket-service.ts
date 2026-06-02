@@ -181,7 +181,15 @@ export const addTicket = async (
       selectedCustomerName: selectedCustomerName || null,
     }
 
-    const docRef = await addDoc(getTicketsCollection(orgId), ticketData)
+    // Firestore rechaza valores `undefined`. Los cafés que entran por el bridge
+    // enverde (custom token) no tienen displayName/email → `userName` queda undefined
+    // (y algún campo de enrichment podría faltar si una fuente externa falla).
+    // Quitamos las claves undefined para que la venta no falle. Raíz no se ve
+    // afectada: sus tickets siempre traen userName, así que no se omite nada.
+    const ticketDataClean = Object.fromEntries(
+      Object.entries(ticketData).filter(([, v]) => v !== undefined)
+    )
+    const docRef = await addDoc(getTicketsCollection(orgId), ticketDataClean)
 
     // Stats — await para garantizar que se registren antes de devolver
     try {
