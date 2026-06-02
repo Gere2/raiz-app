@@ -3,7 +3,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
 import { signIn as serviceSignIn, type CafeUser, type UserRole } from "@/lib/simple-auth-service"
 import { auth } from "@/lib/firebase-auth"
-import { onIdTokenChanged, signOut as firebaseSignOut } from "firebase/auth"
+import { onIdTokenChanged, signOut as firebaseSignOut, signInWithCustomToken } from "firebase/auth"
 
 type SimpleAuthContextType = {
   user: CafeUser | null
@@ -12,6 +12,7 @@ type SimpleAuthContextType = {
   firestoreAvailable: boolean
   sessionExpiring: boolean
   signIn: (email: string, pin: string) => Promise<CafeUser>
+  signInWithToken: (token: string) => Promise<CafeUser>
   signOut: () => void
   // mantenemos estas props por compatibilidad (aunque ahora no se usen en login)
   users: CafeUser[]
@@ -91,6 +92,28 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
     return loggedInUser
   }
 
+  // Login enverde (bridge custom-token): canjea el token firmado por el brain
+  // (uid=enverde_<orgId>) por sesión Firebase y siembra un cafeUser mínimo para
+  // pasar la guardia del POS. El orgId real lo resuelve useOrg vía /api/my-orgs
+  // (users.orgIds); el acceso a datos sigue gateado por orgs/{id}/members.
+  const handleSignInWithToken = async (token: string): Promise<CafeUser> => {
+    const cred = await signInWithCustomToken(auth, token)
+    await cred.user.getIdToken(true)
+    const claims = (await cred.user.getIdTokenResult()).claims
+    const orgId = typeof claims.orgId === "string" ? claims.orgId : ""
+    const cafeUser: CafeUser = {
+      id: cred.user.uid,
+      name: orgId || "Mi café",
+      pin: "",
+      role: "admin",
+      createdAt: null,
+    }
+    setUser(cafeUser)
+    try { localStorage.setItem("cafeUser", JSON.stringify(cafeUser)) } catch {}
+    setFirestoreAvailable(true)
+    return cafeUser
+  }
+
   const handleSignOut = async () => {
     try {
       await firebaseSignOut(auth)
@@ -118,6 +141,7 @@ export function SimpleAuthProvider({ children }: { children: ReactNode }) {
         firestoreAvailable,
         sessionExpiring,
         signIn: handleSignIn,
+        signInWithToken: handleSignInWithToken,
         signOut: handleSignOut,
         registerUser,
         refreshUsers,

@@ -41,6 +41,8 @@ export default function TreasuryStartPage() {
   const [summary, setSummary] = useState<Blocks | null>(null);
   const [month, setMonth] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [openingPos, setOpeningPos] = useState(false);
+  const [posError, setPosError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -115,6 +117,27 @@ export default function TreasuryStartPage() {
     },
     [user, orgId],
   );
+
+  // Handoff al POS (otro origen → la sesión no se traslada): el brain acuña un
+  // custom token fresco y redirige a pos.raizygrano.com/enverde-login.
+  const openPos = useCallback(async () => {
+    if (!user) return;
+    setOpeningPos(true);
+    setPosError(null);
+    try {
+      const r = await authedFetch(user, `/api/enverde/pos-login?orgId=${encodeURIComponent(orgId)}&next=/pos`);
+      const d = (await r.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (r.ok && d.url) {
+        window.location.href = d.url;
+      } else {
+        setPosError(d.error ?? "No pudimos abrir el TPV. Inténtalo de nuevo.");
+        setOpeningPos(false);
+      }
+    } catch {
+      setPosError("No pudimos abrir el TPV. Inténtalo de nuevo.");
+      setOpeningPos(false);
+    }
+  }, [user, orgId]);
 
   /* ─── Estados de auth ─────────────────────────────────────── */
   if (!authReady) {
@@ -220,6 +243,17 @@ export default function TreasuryStartPage() {
             : "Tu CFO está leyendo el mes…"}
         </p>
       )}
+
+      <button
+        type="button"
+        onClick={openPos}
+        disabled={openingPos}
+        className="mt-4 rounded-xl border px-5 py-3 text-sm font-semibold disabled:opacity-70"
+        style={{ borderColor: ACCENT, color: ACCENT }}
+      >
+        {openingPos ? "Abriendo TPV…" : "¿Ya tienes tu carta? Abrir TPV para cobrar →"}
+      </button>
+      {posError && <p className="mt-2 text-sm text-red-600">{posError}</p>}
 
       {phase === "error" && error && (
         <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
