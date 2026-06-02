@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { COLLECTIONS } from "@/lib/firebase-collections";
 
 function convertQtyToBase(qty: number, unit: string, baseUnit: string) {
@@ -46,6 +46,7 @@ export async function POST(
   try {
     const { uid } = await requireAuth(req);
     const { orgId, recipeId } = await params;
+    await requireOrgMember(req, orgId);
 
     const body = await req.json().catch(() => ({}));
     const catalogItemId = (body?.catalogItemId ?? "").toString().trim();

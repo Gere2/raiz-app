@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { createAccrual, loadAccruals } from "@/lib/treasury/store";
 
 type Params = { params: Promise<{ orgId: string }> };
@@ -19,6 +19,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const url = new URL(req.url);
     const economicMonth = url.searchParams.get("economicMonth") ?? undefined;
     const status = url.searchParams.get("status") ?? undefined;
@@ -55,6 +56,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const { uid } = await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json();
 
     if (!body.economicMonth || !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.economicMonth)) {

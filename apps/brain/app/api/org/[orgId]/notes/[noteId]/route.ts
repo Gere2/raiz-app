@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { COLLECTIONS } from "@/lib/firebase-collections";
 
 export async function PATCH(
@@ -10,6 +10,7 @@ export async function PATCH(
 ) {
   try {
     const { orgId, noteId } = await params;
+    await requireOrgMember(req, orgId);
     const { uid } = await requireAuth(req);
 
     const body = await req.json().catch(() => ({}));
@@ -47,6 +48,7 @@ export async function DELETE(
 ) {
   try {
     const { orgId, noteId } = await params;
+    await requireOrgMember(req, orgId);
     await requireAuth(req);
 
     const ref = db.collection(COLLECTIONS.ORGS).doc(orgId).collection(COLLECTIONS.NOTES).doc(noteId);

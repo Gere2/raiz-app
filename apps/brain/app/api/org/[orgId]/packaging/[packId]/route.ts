@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 type Params = { params: Promise<{ orgId: string; packId: string }> };
 
@@ -8,6 +8,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, packId } = await params;
+    await requireOrgMember(req, orgId);
     const snap = await db.collection("orgs").doc(orgId).collection("packaging").doc(packId).get();
     if (!snap.exists) return NextResponse.json({ error: "No encontrado" }, { status: 404 });
     return NextResponse.json({ packaging: { id: packId, ...snap.data() } });
@@ -21,6 +22,7 @@ export async function PATCH(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, packId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json();
 
     const updates: Record<string, unknown> = {};
@@ -48,6 +50,7 @@ export async function DELETE(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, packId } = await params;
+    await requireOrgMember(req, orgId);
     await db.collection("orgs").doc(orgId).collection("packaging").doc(packId).delete();
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {

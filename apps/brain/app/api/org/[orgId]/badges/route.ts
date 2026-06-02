@@ -7,7 +7,7 @@
  * Auth: staff only
  */
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/require-auth"
+import { requireAuth, requireOrgMember } from "@/lib/require-auth"
 import { db as adminDb } from "@/lib/firebase-admin"
 
 const BADGE_DEFINITIONS = [
@@ -37,6 +37,10 @@ export async function GET(
   }
 
   const { orgId } = await params
+
+  try { await requireOrgMember(req, orgId) } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
 
   // Aggregate unlock counts from customer_profiles scoped to this org
   const profilesSnap = await adminDb

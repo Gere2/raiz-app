@@ -5,7 +5,7 @@
  * Staff only. Idempotent (safe to run multiple times).
  */
 import { NextRequest, NextResponse } from "next/server"
-import { requireAuth } from "@/lib/require-auth"
+import { requireAuth, requireOrgMember } from "@/lib/require-auth"
 import { db as adminDb, FieldValue } from "@/lib/firebase-admin"
 import { COLLECTIONS } from "@/lib/firebase-collections"
 
@@ -23,6 +23,10 @@ export async function POST(
   }
 
   const { orgId } = await params
+
+  try { await requireOrgMember(req, orgId) } catch {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 })
+  }
 
   // Get org details to identify profiles by email domain
   const orgSnap = await adminDb.collection(COLLECTIONS.ORGS).doc(orgId).get()

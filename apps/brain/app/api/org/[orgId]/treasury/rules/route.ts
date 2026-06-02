@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { db, FieldValue } from "@/lib/firebase-admin";
 import { loadAllRules, seedRules } from "@/lib/treasury/store";
 import type { TreasuryRule } from "@/lib/treasury/types";
@@ -16,6 +16,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const rules = await loadAllRules(orgId);
     rules.sort((a, b) => b.priority - a.priority);
     return NextResponse.json({ ok: true, rules, total: rules.length });
@@ -39,6 +40,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const { uid } = await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json().catch(() => ({}));
 
     if (body?.action === "seed") {

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { deleteAccrual, updateAccrual } from "@/lib/treasury/store";
 
 type Params = { params: Promise<{ orgId: string; accrualId: string }> };
@@ -17,6 +17,7 @@ export async function PATCH(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, accrualId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json();
 
     if (body.economicMonth && !/^\d{4}-(0[1-9]|1[0-2])$/.test(body.economicMonth)) {
@@ -61,6 +62,7 @@ export async function DELETE(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, accrualId } = await params;
+    await requireOrgMember(req, orgId);
     await deleteAccrual(orgId, accrualId);
     return NextResponse.json({ ok: true });
   } catch (e: unknown) {

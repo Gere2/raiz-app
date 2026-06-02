@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { db } from "@/lib/firebase-admin";
 import { loadAccruals, loadAssumptions } from "@/lib/treasury/store";
 import {
@@ -39,6 +39,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const url = new URL(req.url);
 
     const month = url.searchParams.get("month");

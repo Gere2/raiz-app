@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 type Params = {
   params: Promise<{ orgId: string; recipeId: string; ingredientId: string }>;
@@ -31,6 +31,7 @@ export async function PATCH(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, recipeId, ingredientId } = await params;
+    await requireOrgMember(req, orgId);
     const { qty } = await req.json();
 
     if (qty == null || Number(qty) < 0) {
@@ -73,6 +74,7 @@ export async function DELETE(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, recipeId, ingredientId } = await params;
+    await requireOrgMember(req, orgId);
 
     await db
       .collection("orgs").doc(orgId)

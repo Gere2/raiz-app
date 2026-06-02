@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 type Params = { params: Promise<{ orgId: string; supplierId: string }> };
 
@@ -15,6 +15,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const { uid } = await requireAuth(req);
     const { orgId, supplierId } = await params;
+    await requireOrgMember(req, orgId);
 
     const apiKey = process.env.ANTHROPIC_API_KEY;
     if (!apiKey) {
@@ -130,6 +131,7 @@ export async function GET(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, supplierId } = await params;
+    await requireOrgMember(req, orgId);
 
     const snap = await db.collection("orgs").doc(orgId)
       .collection("suppliers").doc(supplierId)

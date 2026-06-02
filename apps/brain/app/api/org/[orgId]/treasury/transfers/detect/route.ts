@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 import { db, FieldValue } from "@/lib/firebase-admin";
 import {
   detectTransfers,
@@ -43,6 +43,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const body = await req.json().catch(() => ({}));
 
     const range = resolveRange(body);

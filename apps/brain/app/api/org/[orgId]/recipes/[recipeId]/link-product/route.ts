@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 type Params = { params: Promise<{ orgId: string; recipeId: string }> };
 
@@ -14,6 +14,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, recipeId } = await params;
+    await requireOrgMember(req, orgId);
     const { productId, productName, productPrice } = await req.json();
 
     if (!productId) {
@@ -56,6 +57,7 @@ export async function DELETE(req: Request, { params }: Params) {
   try {
     await requireAuth(req);
     const { orgId, recipeId } = await params;
+    await requireOrgMember(req, orgId);
 
     await db.collection("orgs").doc(orgId).collection("recipes").doc(recipeId).update({
       productId: FieldValue.delete(),

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 type Params = { params: Promise<{ orgId: string }> };
 
@@ -35,6 +35,7 @@ export async function POST(req: Request, { params }: Params) {
   try {
     const { uid } = await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
     const { supplier, items } = (await req.json()) as {
       supplier: string;
       items: InvoiceItem[];

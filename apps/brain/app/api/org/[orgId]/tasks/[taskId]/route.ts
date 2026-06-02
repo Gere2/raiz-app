@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { FieldValue } from "firebase-admin/firestore";
 import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireAuth, requireOrgMember } from "@/lib/require-auth";
 
 export async function PATCH(
   req: Request,
@@ -10,6 +10,7 @@ export async function PATCH(
   try {
     await requireAuth(req);
     const { orgId, taskId } = await params;
+    await requireOrgMember(req, orgId);
 
     const body = await req.json().catch(() => ({}));
     const patch: Record<string, unknown> = { updatedAt: FieldValue.serverTimestamp() };
@@ -32,6 +33,7 @@ export async function DELETE(
   try {
     await requireAuth(req);
     const { orgId, taskId } = await params;
+    await requireOrgMember(req, orgId);
 
     await db.collection("orgs").doc(orgId).collection("tasks").doc(taskId).delete();
     return NextResponse.json({ ok: true });
