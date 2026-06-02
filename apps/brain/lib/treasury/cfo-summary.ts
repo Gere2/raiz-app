@@ -142,7 +142,8 @@ OUTPUT: SOLO JSON válido, sin markdown, sin comentarios, con esta forma exacta:
 
 function buildUserPrompt(
   snapshot: MonthlySnapshot,
-  previousSnapshot?: MonthlySnapshot
+  previousSnapshot?: MonthlySnapshot,
+  founderName: string = "Geremi" // Raíz legacy por defecto; enverde pasa el fundador real
 ): string {
   const { monthId, cash, economic, foodCost, semaforo, possibleSalary, scenarios, warnings } = snapshot;
 
@@ -188,7 +189,7 @@ function buildUserPrompt(
     lines.push("");
   }
   if (possibleSalary) {
-    lines.push("SUELDO POSIBLE Geremi este mes:");
+    lines.push(`SUELDO POSIBLE ${founderName} este mes:`);
     lines.push(`  Máximo por caja:                     ${possibleSalary.sueldoMaximoCaja.toFixed(2)} €`);
     lines.push(`  Máximo por económico:                ${possibleSalary.sueldoMaximoEconomico.toFixed(2)} €`);
     lines.push(`  Máximo (el más restrictivo):         ${possibleSalary.sueldoMaximo.toFixed(2)} €`);
@@ -243,7 +244,7 @@ export async function generateCFOSummary(
   // Raíz (sin profile) usa el SYSTEM_PROMPT legacy byte-idéntico; enverde pasa profile.
   const systemPrompt = options.profile ? buildSystemPrompt(options.profile) : SYSTEM_PROMPT;
 
-  const userPrompt = buildUserPrompt(snapshot, options.previousSnapshot);
+  const userPrompt = buildUserPrompt(snapshot, options.previousSnapshot, options.profile?.founderName);
 
   // Prompt caching: el system prompt es estable y largo (>1k tokens) → vale la pena
   // cachearlo con cache_control. La parte variable (user) no se cachea.
