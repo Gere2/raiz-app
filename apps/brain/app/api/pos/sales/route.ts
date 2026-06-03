@@ -1,18 +1,26 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireOrgMember } from "@/lib/require-auth";
+import { orgTickets } from "@/lib/pos-scope";
 
 /**
- * GET /api/pos/sales?days=7
+ * GET /api/pos/sales?orgId=<org>&days=7
  *
- * Lee tickets y orders del POS para generar métricas de ventas reales.
- * Conecta Brain con el marketplace como piloto.
+ * Métricas de ventas reales del café: tickets (POS) + orders (app).
+ *
+ * Org-scoped: tickets viven en `orgs/{orgId}/tickets` (Raíz incluida; la
+ * colección top-level `tickets` quedó congelada ~mar-2026); orders en la
+ * colección root filtrada por campo `orgId`. requireOrgMember → sin fuga.
  *
  * Returns: { sales[], summary }
  */
 export async function GET(req: NextRequest) {
   try {
-    await requireAuth(req);
+    const orgId = (req.nextUrl.searchParams.get("orgId") || "").trim();
+    if (!orgId) {
+      return NextResponse.json({ error: "orgId requerido" }, { status: 400 });
+    }
+    await requireOrgMember(req, orgId);
 
     // MEDIA #9: Cap days parameter to max 30
     let days = Number(req.nextUrl.searchParams.get("days")) || 7;
@@ -20,34 +28,45 @@ export async function GET(req: NextRequest) {
     const since = new Date();
     since.setDate(since.getDate() - days);
 
-    // Leer tickets (POS) y orders (App) en paralelo
+    // tickets org-scoped (subcolección) + orders root filtradas por orgId
     const [ticketsSnap, ordersSnap] = await Promise.all([
-      db.collection("tickets")
+      orgTickets(orgId)
         .where("createdAt", ">=", since)
         .orderBy("createdAt", "desc")
         .limit(500)
         .get(),
       db.collection("orders")
+        .where("orgId", "==", orgId)
         .where("createdAt", ">=", since)
-        .orderBy("createdAt", "desc")
         .limit(500)
         .get(),
     ]);
 
+    // Normaliza items de ambos esquemas:
+    //   vivo (subcolección): { product: {id,name,price}, quantity }
+    //   legacy (top-level):  { productId, productName, qty, unitPrice }
+    const mapItem = (i: Record<string, unknown>) => {
+      const product = (i.product || {}) as Record<string, unknown>;
+      const qty = Number(i.qty) || Number(i.quantity) || 1;
+      const unitPrice =
+        Number(i.unitPrice) || Number(i.price) || Number(product.price) || 0;
+      return {
+        productId: (i.productId || product.id || "") as string,
+        productName: (i.productName || i.name || product.name || "") as string,
+        qty,
+        unitPrice,
+        lineTotal: qty * unitPrice,
+      };
+    };
+
     // Procesar tickets del POS
-    const posSales = ticketsSnap.docs.map(d => {
+    const posSales = ticketsSnap.docs.map((d) => {
       const data = d.data();
       return {
         id: d.id,
         source: "POS" as const,
         total: Number(data.total) || 0,
-        items: (data.items || []).map((i: Record<string, unknown>) => ({
-          productId: i.productId || "",
-          productName: i.productName || i.name || "",
-          qty: Number(i.qty) || 1,
-          unitPrice: Number(i.unitPrice) || Number(i.price) || 0,
-          lineTotal: (Number(i.qty) || 1) * (Number(i.unitPrice) || Number(i.price) || 0),
-        })),
+        items: ((data.items as Record<string, unknown>[]) || []).map(mapItem),
         paymentMethod: data.paymentMethod || "cash",
         createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
       };
@@ -55,23 +74,14 @@ export async function GET(req: NextRequest) {
 
     // Procesar orders de la App
     const appSales = ordersSnap.docs
-      .filter(d => {
-        const status = d.data().status;
-        return status !== "CANCELED";
-      })
-      .map(d => {
+      .filter((d) => d.data().status !== "CANCELED")
+      .map((d) => {
         const data = d.data();
         return {
           id: d.id,
           source: "APP" as const,
           total: Number(data.total) || 0,
-          items: (data.items || []).map((i: Record<string, unknown>) => ({
-            productId: i.productId || "",
-            productName: i.productName || "",
-            qty: Number(i.qty) || 1,
-            unitPrice: Number(i.unitPrice) || 0,
-            lineTotal: (Number(i.qty) || 1) * (Number(i.unitPrice) || 0),
-          })),
+          items: ((data.items as Record<string, unknown>[]) || []).map(mapItem),
           paymentMethod: data.paymentProvider || "stripe",
           createdAt: data.createdAt?.toDate?.()?.toISOString() || null,
         };
@@ -91,6 +101,7 @@ export async function GET(req: NextRequest) {
     for (const sale of allSales) {
       for (const item of sale.items) {
         const key = item.productId || item.productName;
+        if (!key) continue;
         if (!productCounts[key]) {
           productCounts[key] = { name: item.productName, qty: 0, revenue: 0 };
         }

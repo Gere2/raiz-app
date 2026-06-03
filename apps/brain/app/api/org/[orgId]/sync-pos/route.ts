@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db, FieldValue } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireOrgMember } from "@/lib/require-auth";
+import { posCollection } from "@/lib/pos-scope";
 
 type Params = { params: Promise<{ orgId: string }> };
 
@@ -14,11 +15,11 @@ type Params = { params: Promise<{ orgId: string }> };
  */
 export async function POST(req: Request, { params }: Params) {
   try {
-    await requireAuth(req);
     const { orgId } = await params;
+    await requireOrgMember(req, orgId);
 
-    // 1. Leer todos los productos POS
-    const posSnap = await db.collection("products").get();
+    // 1. Leer productos POS del café (Raíz→top-level; otros→org-scoped)
+    const posSnap = await posCollection(orgId, "products").get();
     const posProducts = new Map<string, { name: string; price: number }>();
     posSnap.docs.forEach(d => {
       posProducts.set(d.id, { name: d.data().name, price: Number(d.data().price) || 0 });

@@ -157,7 +157,7 @@ export default function MeetingCombosSection({ user, orgId }: Props) {
   /* ── Fetch products from POS ── */
   const fetchProducts = useCallback(async () => {
     try {
-      const r = await authedFetch(user, `/api/pos/products`)
+      const r = await authedFetch(user, `/api/pos/products?orgId=${orgId}`)
       const d = await r.json()
       setDbProducts((d.products || []).filter((p: DBProduct) => p.available !== false))
       setDbCategories(d.categories || [])

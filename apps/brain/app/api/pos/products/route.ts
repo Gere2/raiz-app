@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireOrgMember } from "@/lib/require-auth";
+import { posCollection } from "@/lib/pos-scope";
 
 /**
- * GET /api/pos/products
- * Lee productos + categorías directamente de las colecciones del POS
- * (colecciones raíz: products, categories)
+ * GET /api/pos/products?orgId=<org>
+ * Lee productos + categorías del catálogo del café.
  *
- * NOTE: This endpoint reads from root-level collections (not org-scoped).
- * This is intentional for the POS system, which uses a global product catalog.
- * Cross-org data leakage is prevented by org-level POS configuration checks.
+ * Org-scoped: Raíz y Grano (single-tenant original) sigue en las colecciones
+ * top-level `products`/`categories`; los demás cafés leen su catálogo bajo
+ * `orgs/{orgId}/…` (mismo shim que product-service del POS). Solo un MIEMBRO de
+ * la org puede leer (requireOrgMember) → sin fuga cross-tenant.
  *
  * Devuelve: { products, categories }
  */
-export async function GET(_req: Request) {
+export async function GET(req: Request) {
   try {
-    await requireAuth(_req);
+    const orgId = (new URL(req.url).searchParams.get("orgId") || "").trim();
+    if (!orgId) {
+      return NextResponse.json({ error: "orgId requerido" }, { status: 400 });
+    }
+    await requireOrgMember(req, orgId);
 
     const [prodSnap, catSnap] = await Promise.all([
-      db.collection("products").orderBy("name").get(),
-      db.collection("categories").get(),
+      posCollection(orgId, "products").orderBy("name").get(),
+      posCollection(orgId, "categories").get(),
     ]);
 
     // Mapa de categorías

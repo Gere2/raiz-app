@@ -43,7 +43,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
     setLoading(true);
     try {
       const [pRes, rRes] = await Promise.all([
-        authedFetch(user, "/api/pos/products"),
+        authedFetch(user, `/api/pos/products?orgId=${orgId}`),
         authedFetch(user, `/api/org/${orgId}/recipes`),
       ]);
       const pData = await pRes.json();

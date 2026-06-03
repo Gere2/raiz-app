@@ -1,19 +1,26 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase-admin";
-import { requireAuth } from "@/lib/require-auth";
+import { requireOrgMember } from "@/lib/require-auth";
+import { posCollection } from "@/lib/pos-scope";
 
 /**
- * GET /api/pos/inventory
- * Lee inventario + categorías de inventario del POS
- * (colecciones raíz: inventory, inventory_categories)
+ * GET /api/pos/inventory?orgId=<org>
+ * Lee inventario + categorías de inventario del café.
+ *
+ * Org-scoped (mismo shim que /api/pos/products): Raíz en las colecciones
+ * top-level `inventory`/`inventory_categories`; los demás cafés bajo
+ * `orgs/{orgId}/…`. requireOrgMember → sin fuga cross-tenant.
  */
 export async function GET(req: Request) {
   try {
-    await requireAuth(req);
+    const orgId = (new URL(req.url).searchParams.get("orgId") || "").trim();
+    if (!orgId) {
+      return NextResponse.json({ error: "orgId requerido" }, { status: 400 });
+    }
+    await requireOrgMember(req, orgId);
 
     const [invSnap, catSnap] = await Promise.all([
-      db.collection("inventory").get(),
-      db.collection("inventory_categories").get(),
+      posCollection(orgId, "inventory").get(),
+      posCollection(orgId, "inventory_categories").get(),
     ]);
 
     const catMap: Record<string, string> = {};
