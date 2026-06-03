@@ -64,18 +64,20 @@ export const SEED_RULES: TreasuryRule[] = [
   /* ─── Impuestos / cotizaciones ──────────────────────────────── */
   {
     id: "seed_aeat",
-    name: "AEAT / Agencia Tributaria (incluye NRC)",
+    name: "AEAT / Agencia Tributaria (NRC + cargo de impuestos)",
     priority: 180,
-    version: 2,
+    version: 3,
     active: true,
     amountSign: "negative",
     matchers: [
       {
         field: "concept_or_supplier",
-        // v2 (PR1.1): añadido patrón NRC — los pagos a Hacienda en BBVA aparecen
-        // como "NRC. <referencia>" sin la palabra AEAT en el concepto.
+        // v2 (PR1.1): patrón NRC — pagos a Hacienda en BBVA como "NRC. <ref>".
+        // v3 (2026-06): "CARGO POR PAGO DE IMPUESTOS - TRIBUTOS" (BBVA código
+        // 00326) cuando la referencia NO trae el prefijo "NRC." en el concepto.
         regex:
-          "\\baeat\\b|agencia\\s+tributaria|hacienda\\s+p[uú]blica|\\bnrc[\\s.]",
+          "\\baeat\\b|agencia\\s+tributaria|hacienda\\s+p[uú]blica|\\bnrc[\\s.]" +
+          "|cargo\\s+por\\s+pago\\s+de\\s+impuestos|pago\\s+de\\s+(impuestos|tributos)",
       },
     ],
     action: {
@@ -124,6 +126,44 @@ export const SEED_RULES: TreasuryRule[] = [
       confidence: 0.95,
     },
     source: "seed",
+  },
+
+  /* ─── Comisiones / gastos del propio banco (v1, 2026-06) ────── */
+  {
+    id: "seed_bank_fees",
+    name: "Comisiones y gastos bancarios",
+    priority: 140,
+    version: 1,
+    active: true,
+    amountSign: "negative",
+    matchers: [
+      {
+        field: "concept_or_supplier",
+        // Cargos del banco, NO de un proveedor. Frases distintivas para no
+        // colisionar con "Liquidacion Efectuada" (TPV, priority 200, positivo).
+        regex:
+          "tarifa\\s+plana" +
+          "|liquidaci[oó]n\\s+de\\s+intereses" +
+          "|intereses[\\s-]+comisiones" +
+          "|comisiones[\\s-]+gastos" +
+          "|liquidaci[oó]n\\s+del\\s+contrato" +
+          "|regularizaci[oó]n\\s+cuenta\\s+de\\s+incidencias" +
+          "|comisi[oó]n\\s+(de\\s+)?mantenimiento" +
+          "|mantenimiento\\s+(de\\s+)?cuenta",
+      },
+    ],
+    action: {
+      category: "servicios",
+      subcategory: "comisiones_bancarias",
+      flowKind: "expense_operating",
+      supplierName: "Comisión bancaria",
+      confidence: 0.85,
+    },
+    source: "seed",
+    notes:
+      "Comisiones, tarifas y gastos que cobra el propio banco (tarifa plana, " +
+      "intereses-comisiones-gastos, liquidación del contrato, regularización de " +
+      "incidencias, mantenimiento). Gasto operativo inequívoco — no es proveedor.",
   },
 
   /* ─── Proveedores específicos ───────────────────────────────── */
@@ -649,4 +689,4 @@ export const SEED_RULES: TreasuryRule[] = [
 ];
 
 /** Versión global del ruleset semilla — útil para invalidar caché futura. */
-export const SEED_RULES_VERSION = 5;
+export const SEED_RULES_VERSION = 6;

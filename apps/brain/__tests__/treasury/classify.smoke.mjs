@@ -108,6 +108,42 @@ console.log("\nclassifyMovement — impuestos / SS / TPV");
     r.category !== "ventas_tpv", r);
 }
 
+console.log("\nclassifyMovement — comisiones banco + impuestos sin NRC (v6)");
+{
+  const r = classifyMovement({ concept: "COBRO TARIFA PLANA", amount: -5 }, SEED_RULES);
+  check("Tarifa plana → servicios/comisiones_bancarias",
+    r.category === "servicios" && r.subcategory === "comisiones_bancarias" && r.flowKind === "expense_operating", r);
+}
+{
+  const r = classifyMovement({ concept: "LIQUIDACION DE INTERESES-COMISIONES-GASTOS", amount: -20.13 }, SEED_RULES);
+  check("Intereses-comisiones-gastos → comisiones_bancarias", r.subcategory === "comisiones_bancarias", r);
+}
+{
+  const r = classifyMovement({ concept: "LIQUIDACION DEL CONTRATO 0010440 300", amount: -15.11 }, SEED_RULES);
+  check("Liquidación del contrato → comisiones_bancarias (NO ventas_tpv)",
+    r.subcategory === "comisiones_bancarias" && r.category !== "ventas_tpv", r);
+}
+{
+  const r = classifyMovement({ concept: "CARGO POR PAGO DE IMPUESTOS - TRIBUTOS 282613309818PKW6EMLNRY", amount: -646.73 }, SEED_RULES);
+  check("Cargo por pago de impuestos (sin NRC) → impuestos/aeat",
+    r.category === "impuestos" && r.subcategory === "aeat", r);
+}
+{
+  // El TPV real ("Liquidacion Efectuada", positivo) NO debe caer en comisión del banco.
+  const r = classifyMovement({ concept: "LIQUIDACION EFECTUADA EL 24/04 A RAIZ Y GRANO", amount: 617.50 }, SEED_RULES);
+  check("Liquidación EFECTUADA sigue siendo ventas_tpv (no comisión)",
+    r.category === "ventas_tpv" && r.flowKind === "income_sales_tpv", r);
+}
+
+console.log("\nclassifyMovement — gasto-juicio se queda flageado (decisión de producto)");
+{
+  // Súper / restaurantes: a veces es personal → el sistema DEBE preguntar, no adivinar.
+  const r1 = classifyMovement({ concept: "PAGO CON TARJETA EN SUPERMERCADOS MERCADONA MONTECLARO", amount: -44.48 }, SEED_RULES);
+  const r2 = classifyMovement({ concept: "PAGO CON TARJETA EN RESTAURANTES Y CAFETERIAS EFES DONER KEBAP", amount: -12.50 }, SEED_RULES);
+  check("Súper → needs_review (NO auto-clasificar)", r1.flowKind === "needs_review", r1);
+  check("Restaurante → needs_review (NO auto-clasificar)", r2.flowKind === "needs_review", r2);
+}
+
 console.log("\nclassifyMovement — tarjetas / retiradas");
 {
   const r = classifyMovement({ concept: "PAGO TARJETA *9415 ABRIL 2026", amount: -315.45 }, SEED_RULES);
