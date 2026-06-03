@@ -205,7 +205,7 @@ export const addTicket = async (
 
     // Stats — await para garantizar que se registren antes de devolver
     try {
-      await updateProductDailyStats(items, enrichment.timeSlot, paymentMethod, "POS")
+      await updateProductDailyStats(orgId, items, enrichment.timeSlot, paymentMethod, "POS")
     } catch (err) {
       console.error("Error updating product stats:", err)
     }

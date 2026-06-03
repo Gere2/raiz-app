@@ -1,28 +1,28 @@
 /**
  * product-stats-service.ts
- * 
+ *
  * Actualiza automáticamente estadísticas diarias por producto.
  * Se llama después de cada ticket — usa increment() para operaciones atómicas.
- * 
- * Colección: product_daily_stats
- * Doc ID: {productId}_{YYYY-MM-DD}
+ *
+ * Colección (org-scoped): Raíz→`product_daily_stats` (top-level); otros cafés→
+ * `orgs/{orgId}/product_daily_stats`. Doc ID: {productId}_{YYYY-MM-DD}.
  */
 
 import {
-  doc,
   setDoc,
   getDocs,
-  collection,
   query,
   where,
-  orderBy,
   increment,
   arrayUnion,
   Timestamp,
 } from "firebase/firestore"
 import { db } from "./firebase"
+import { orgCollection, orgDoc } from "./org-scope"
 import type { OrderItem } from "./ticket-service"
 import type { TimeSlot } from "./data-enrichment"
+
+const STATS_COLLECTION = "product_daily_stats"
 
 // ── Tipos ──
 
@@ -83,12 +83,13 @@ function getDocId(productId: string, date: string): string {
 // ══════════════════════════════════════
 
 export async function updateProductDailyStats(
+  orgId: string,
   items: OrderItem[],
   timeSlot: TimeSlot,
   paymentMethod: "CASH" | "CARD",
   source: "POS" | "APP" = "POS",
 ): Promise<void> {
-  if (!db || items.length === 0) return
+  if (!db || !orgId || items.length === 0) return
 
   const today = getDateString()
   const allProductIds = items.map(item => item.product.id)
@@ -96,7 +97,7 @@ export async function updateProductDailyStats(
   const updates = items.map(async (item) => {
     const productId = item.product.id
     const docId = getDocId(productId, today)
-    const docRef = doc(db, "product_daily_stats", docId)
+    const docRef = orgDoc(orgId, STATS_COLLECTION, docId)
 
     // Productos con los que se combina (excluyéndose a sí mismo)
     const pairedIds = allProductIds.filter(id => id !== productId)
@@ -142,12 +143,12 @@ export async function updateProductDailyStats(
 // ══════════════════════════════════════
 
 /** Obtener stats de un día específico */
-export async function getStatsByDate(date: string): Promise<ProductDailyStat[]> {
-  if (!db) return []
+export async function getStatsByDate(orgId: string, date: string): Promise<ProductDailyStat[]> {
+  if (!db || !orgId) return []
 
   try {
     const q = query(
-      collection(db, "product_daily_stats"),
+      orgCollection(orgId, STATS_COLLECTION),
       where("date", "==", date),
     )
     const snap = await getDocs(q)
@@ -162,14 +163,15 @@ export async function getStatsByDate(date: string): Promise<ProductDailyStat[]> 
 
 /** Obtener stats de un rango de fechas */
 export async function getStatsByDateRange(
+  orgId: string,
   startDate: string,
   endDate: string,
 ): Promise<ProductDailyStat[]> {
-  if (!db) return []
+  if (!db || !orgId) return []
 
   try {
     const q = query(
-      collection(db, "product_daily_stats"),
+      orgCollection(orgId, STATS_COLLECTION),
       where("date", ">=", startDate),
       where("date", "<=", endDate),
     )
@@ -185,15 +187,16 @@ export async function getStatsByDateRange(
 
 /** Obtener stats de un producto específico en un rango */
 export async function getProductStats(
+  orgId: string,
   productId: string,
   startDate: string,
   endDate: string,
 ): Promise<ProductDailyStat[]> {
-  if (!db) return []
+  if (!db || !orgId) return []
 
   try {
     const q = query(
-      collection(db, "product_daily_stats"),
+      orgCollection(orgId, STATS_COLLECTION),
       where("productId", "==", productId),
       where("date", ">=", startDate),
       where("date", "<=", endDate),

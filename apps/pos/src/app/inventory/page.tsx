@@ -1,8 +1,11 @@
 "use client"
 
 import { useEffect, useState, useMemo } from "react"
-import { collection, getDocs, updateDoc, doc, writeBatch } from "firebase/firestore"
+import { getDocs, writeBatch } from "firebase/firestore"
 import { db } from "@/lib/firebase"
+import { orgCollection, orgDoc } from "@/lib/org-scope"
+import { useAuth } from "@/components/auth-provider"
+import { useOrg } from "@/hooks/useOrg"
 import { AuthenticatedLayout } from "@/components/authenticated-layout"
 import { RoleGuard } from "@/components/role-guard"
 import {
@@ -31,6 +34,8 @@ export default function InventoryPage() {
 }
 
 function InventoryContent() {
+  const { user } = useAuth()
+  const { orgId } = useOrg(user)
   const [products, setProducts] = useState<ProductStock[]>([])
   const [categories, setCategories] = useState<Record<string, string>>({})
   const [loading, setLoading] = useState(true)
@@ -42,10 +47,11 @@ function InventoryContent() {
   const [saved, setSaved] = useState(false)
 
   const fetchData = async () => {
+    if (!orgId) return
     try {
       const [prodSnap, catSnap] = await Promise.all([
-        getDocs(collection(db, "products")),
-        getDocs(collection(db, "categories")),
+        getDocs(orgCollection(orgId, "products")),
+        getDocs(orgCollection(orgId, "categories")),
       ])
       const catMap: Record<string, string> = {}
       catSnap.docs.forEach((d) => { catMap[d.id] = d.data().name || d.id })
@@ -66,7 +72,7 @@ function InventoryContent() {
     finally { setLoading(false) }
   }
 
-  useEffect(() => { fetchData() }, [])
+  useEffect(() => { fetchData() }, [orgId])
 
   const updateProduct = (id: string, field: string, value: any) => {
     setChanges((prev) => {
@@ -90,7 +96,7 @@ function InventoryContent() {
     try {
       const batch = writeBatch(db)
       changes.forEach((change, id) => {
-        const ref = doc(db, "products", id)
+        const ref = orgDoc(orgId, "products", id)
         batch.update(ref, change)
       })
       await batch.commit()

@@ -430,6 +430,8 @@ export default function POSPageFullscreen() {
               )}
             </button>
             )}
+            {/* Bonos de cliente (exam-pass de Raíz) — per-café en task #3 */}
+            {isRaiz && (<>
             <button
               className="w-10 h-10 rounded-xl flex items-center justify-center transition-colors hover:bg-white/10"
               onClick={() => setShowGrantBonoModal(true)}
@@ -446,6 +448,7 @@ export default function POSPageFullscreen() {
             >
               <Coffee className="h-5 w-5" />
             </button>
+            </>)}
             <div className="w-px h-6 bg-white/15 mx-1" />
             <Link href="/">
               <button className="w-10 h-10 rounded-xl flex items-center justify-center hover:bg-white/10 transition-colors">
@@ -773,8 +776,8 @@ export default function POSPageFullscreen() {
                 </div>
               )}
 
-              {/* Redemption validator */}
-              {user && orgId && (
+              {/* Redemption validator — bonos son de Raíz (exam-pass); per-café en task #3 */}
+              {user && orgId && isRaiz && (
                 <div className="px-5 pb-4 border-t border-[hsl(35,18%,91%)] pt-3">
                   <RedemptionValidator user={user} orgId={orgId} />
                 </div>
@@ -808,6 +811,7 @@ export default function POSPageFullscreen() {
       {showPaymentModal && (
         <PaymentMethodModal
           total={total}
+          isRaiz={isRaiz}
           onSelect={(method, freq, role, custId, custName) => {
             setShowPaymentModal(false)
             generateReceipt(method, freq, role, custId, custName)

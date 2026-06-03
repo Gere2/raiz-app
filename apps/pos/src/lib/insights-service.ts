@@ -7,6 +7,7 @@
 
 import { collection, getDocs, query, orderBy, where, Timestamp } from "firebase/firestore"
 import { db } from "./firebase"
+import { isLegacyTopLevel } from "./org-scope"
 
 export type SourceFilter = "all" | "POS" | "APP"
 
@@ -91,7 +92,9 @@ export async function fetchInsights(
   }
 
   // ── Fetch APP orders from root orders collection ──
-  if (sourceFilter === "all" || sourceFilter === "APP") {
+  // Solo Raíz: la app de cliente es de Raíz; un café enverde no tiene pedidos
+  // APP y leer la colección root le filtraría los de Raíz (fuga cross-tenant).
+  if ((sourceFilter === "all" || sourceFilter === "APP") && isLegacyTopLevel(orgId)) {
     const ordersSnap = await getDocs(
       query(collection(db, "orders"), where("source", "==", "APP"))
     )

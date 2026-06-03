@@ -10,6 +10,10 @@ import { QRScannerModal } from "./qr-scanner-modal"
 
 interface PaymentMethodModalProps {
   total: number
+  /** Identificación de cliente / loyalty (alumno/profesor, QR, código) es de
+   *  Raíz (base de clientes + exam-pass). Los cafés enverde no la ven → sin
+   *  fuga de la base de clientes de Raíz. La "frecuencia" sí es genérica. */
+  isRaiz: boolean
   onSelect: (
     method: PaymentMethod,
     customerFrequency: CustomerFrequency,
@@ -20,7 +24,7 @@ interface PaymentMethodModalProps {
   onClose: () => void
 }
 
-export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodModalProps) {
+export function PaymentMethodModal({ total, isRaiz, onSelect, onClose }: PaymentMethodModalProps) {
   // Step: "classify" → "payment"
   const [step, setStep] = useState<"classify" | "payment">("classify")
 
@@ -45,7 +49,7 @@ export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodMo
 
   // Cargar clientes al seleccionar rol
   useEffect(() => {
-    if (!role) {
+    if (!role || !isRaiz) {
       setCustomers([])
       if (!selectedCustomer) setCustomerSearch("")
       return
@@ -154,7 +158,8 @@ export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodMo
                   <p className="text-2xl font-bold text-gray-900">{total.toFixed(2)} €</p>
                 </div>
 
-                {/* ── Identificación rápida (QR + código) ── */}
+                {/* ── Identificación rápida (QR + código) — solo Raíz (clientes/loyalty) ── */}
+                {isRaiz && (
                 <div>
                   <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Identificar cliente</p>
 
@@ -236,6 +241,7 @@ export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodMo
                     </p>
                   )}
                 </div>
+                )}
 
                 {/* ── Frecuencia ── */}
                 <div>
@@ -282,8 +288,8 @@ export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodMo
                   </div>
                 </div>
 
-                {/* ── Tipo de cliente (búsqueda manual) ── */}
-                {!selectedCustomer && (
+                {/* ── Tipo de cliente (búsqueda manual) — solo Raíz ── */}
+                {isRaiz && !selectedCustomer && (
                   <div>
                     <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">O buscar manualmente</p>
                     <div className="grid grid-cols-2 gap-2">
@@ -323,7 +329,7 @@ export function PaymentMethodModal({ total, onSelect, onClose }: PaymentMethodMo
                 )}
 
                 {/* ── Lista de clientes (si se seleccionó rol manual) ── */}
-                {role && !selectedCustomer && (
+                {isRaiz && role && !selectedCustomer && (
                   <div className="border rounded-xl overflow-hidden">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
