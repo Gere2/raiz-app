@@ -48,8 +48,11 @@ export async function GET(req: NextRequest) {
     const mapItem = (i: Record<string, unknown>) => {
       const product = (i.product || {}) as Record<string, unknown>;
       const qty = Number(i.qty) || Number(i.quantity) || 1;
+      const modsTotal = Array.isArray(i.modifiers)
+        ? (i.modifiers as Array<Record<string, unknown>>).reduce((s, m) => s + (Number(m?.priceAdjustment) || 0), 0)
+        : 0;
       const unitPrice =
-        Number(i.unitPrice) || Number(i.price) || Number(product.price) || 0;
+        (Number(i.unitPrice) || Number(i.price) || Number(product.price) || 0) + modsTotal;
       return {
         productId: (i.productId || product.id || "") as string,
         productName: (i.productName || i.name || product.name || "") as string,

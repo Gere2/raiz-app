@@ -66,7 +66,12 @@ export async function GET(req: NextRequest, { params }: Params) {
         const pid = (item.productId || product.id || "") as string;
         const name = (item.productName || item.name || product.name || "") as string;
         const qty = Number(item.qty) || Number(item.quantity) || 1;
-        const price = Number(item.unitPrice) || Number(item.price) || Number(product.price) || 0;
+        // Suplementos de modifiers (live: item.modifiers[].priceAdjustment) — el
+        // total del ticket ya los incluye; se atribuyen al producto base.
+        const modsTotal = Array.isArray(item.modifiers)
+          ? (item.modifiers as Array<Record<string, unknown>>).reduce((s, m) => s + (Number(m?.priceAdjustment) || 0), 0)
+          : 0;
+        const price = (Number(item.unitPrice) || Number(item.price) || Number(product.price) || 0) + modsTotal;
         const key = pid || name;
         if (!key) continue;
         if (!productSales[key]) productSales[key] = { name, qty: 0, revenue: 0 };

@@ -1,5 +1,6 @@
 import { db } from "./firebase"
 import { doc, getDoc, setDoc, updateDoc, increment, runTransaction } from "firebase/firestore"
+import { isLegacyTopLevel } from "./org-scope"
 
 // Definir colección para configuración
 const CONFIG_COLLECTION = "config"
@@ -10,10 +11,9 @@ const FISCAL_DOC = "fiscalData"
 // `orgs/{orgId}/config/ticketCounter` (las reglas permiten read/write a un
 // miembro de la org). Raíz y Grano (single-tenant original) sigue en el doc
 // TOP-LEVEL `config/ticketCounter` (gateado por isAdmin) para NO alterar su
-// numeración fiscal. Espeja el shim de product-service (`LEGACY_TOPLEVEL_ORG`).
-const LEGACY_TOPLEVEL_ORG = "raiz_y_grano"
+// numeración fiscal. El shim (isLegacyTopLevel) vive centralizado en ./org-scope.
 const counterRef = (orgId: string) =>
-  orgId === LEGACY_TOPLEVEL_ORG
+  isLegacyTopLevel(orgId)
     ? doc(db, CONFIG_COLLECTION, COUNTER_DOC)
     : doc(db, "orgs", orgId, CONFIG_COLLECTION, COUNTER_DOC)
 
@@ -87,14 +87,14 @@ export const getNextTicketNumber = async (orgId: string): Promise<number> => {
 // Ref org-scoped de datos fiscales (mismo shim que counterRef): Raíz en el doc
 // top-level (intacto); otros cafés en orgs/{orgId}/config/fiscalData.
 const fiscalRef = (orgId: string) =>
-  orgId === LEGACY_TOPLEVEL_ORG
+  isLegacyTopLevel(orgId)
     ? doc(db, CONFIG_COLLECTION, FISCAL_DOC)
     : doc(db, "orgs", orgId, CONFIG_COLLECTION, FISCAL_DOC)
 
 // Default: Raíz conserva su identidad fiscal; otros cafés NO heredan "RAÍZ y GRANO"
 // (recibo legalmente correcto) — businessName en blanco hasta que el café lo fije.
 const defaultFiscalData = (orgId: string): FiscalData => ({
-  businessName: orgId === LEGACY_TOPLEVEL_ORG ? "RAÍZ y GRANO" : "",
+  businessName: isLegacyTopLevel(orgId) ? "RAÍZ y GRANO" : "",
   taxId: "",
   address: "",
   phone: "",

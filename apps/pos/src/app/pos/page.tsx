@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { getCategories, getProductsByCategory, getProducts, type Product } from "@/lib/product-service"
+import { isLegacyTopLevel } from "@/lib/org-scope"
 import {
   type OrderItem, type PaymentMethod, type CustomerFrequency,
   type CustomerRole, addTicket, type OrderItemModifier,
@@ -50,7 +51,7 @@ export default function POSPageFullscreen() {
   // Solo Raíz tiene pedidos online (APP/TEACHER_APP) en las colecciones top-level
   // `orders`/`teacher_orders`. Para otros cafés (enverde) esos listeners darían
   // permission-denied (ruido en consola) y la UI no aplica → la ocultamos.
-  const isRaiz = orgId === "raiz_y_grano"
+  const isRaiz = isLegacyTopLevel(orgId)
   const { user: authUser, isLoading: authLoading } = useSimpleAuth()
   const router = useRouter()
 
