@@ -87,7 +87,7 @@ export default function SettingsPage() {
   const loadFiscalData = async () => {
     try {
       setLoadingFiscal(true)
-      const data = await getFiscalData()
+      const data = orgId ? await getFiscalData(orgId) : null
       if (data) {
         setFiscalData(data)
       }
@@ -132,7 +132,8 @@ export default function SettingsPage() {
   const handleSaveFiscalData = async () => {
     try {
       setSavingFiscal(true)
-      await saveFiscalData(fiscalData)
+      if (!orgId) throw new Error("No hay café seleccionado")
+      await saveFiscalData(orgId, fiscalData)
       toast({
         title: "Datos fiscales guardados",
         description: "Los datos fiscales se han guardado correctamente",

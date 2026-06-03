@@ -84,50 +84,46 @@ export const getNextTicketNumber = async (orgId: string): Promise<number> => {
   }
 }
 
-// Obtener datos fiscales
-export const getFiscalData = async (): Promise<FiscalData | null> => {
+// Ref org-scoped de datos fiscales (mismo shim que counterRef): Raíz en el doc
+// top-level (intacto); otros cafés en orgs/{orgId}/config/fiscalData.
+const fiscalRef = (orgId: string) =>
+  orgId === LEGACY_TOPLEVEL_ORG
+    ? doc(db, CONFIG_COLLECTION, FISCAL_DOC)
+    : doc(db, "orgs", orgId, CONFIG_COLLECTION, FISCAL_DOC)
+
+// Default: Raíz conserva su identidad fiscal; otros cafés NO heredan "RAÍZ y GRANO"
+// (recibo legalmente correcto) — businessName en blanco hasta que el café lo fije.
+const defaultFiscalData = (orgId: string): FiscalData => ({
+  businessName: orgId === LEGACY_TOPLEVEL_ORG ? "RAÍZ y GRANO" : "",
+  taxId: "",
+  address: "",
+  phone: "",
+  email: "",
+  additionalInfo: "",
+})
+
+// Obtener datos fiscales (org-scoped)
+export const getFiscalData = async (orgId: string): Promise<FiscalData | null> => {
   if (!db) throw new Error("Firestore no está inicializado")
+  if (!orgId) throw new Error("orgId es requerido")
 
   try {
-    // Usar la colección 'config' para el documento 'fiscalData'
-    const fiscalRef = doc(db, CONFIG_COLLECTION, FISCAL_DOC)
-    const fiscalSnap = await getDoc(fiscalRef)
-
-    if (!fiscalSnap.exists()) {
-      // Si no existen datos fiscales, devolver valores por defecto
-      return {
-        businessName: "RAÍZ y GRANO",
-        taxId: "",
-        address: "",
-        phone: "",
-        email: "",
-        additionalInfo: "",
-      }
-    }
-
+    const fiscalSnap = await getDoc(fiscalRef(orgId))
+    if (!fiscalSnap.exists()) return defaultFiscalData(orgId)
     return fiscalSnap.data() as FiscalData
   } catch (error: any) {
     console.error("Error al obtener datos fiscales:", error)
-    // En caso de error, devolver valores por defecto
-    return {
-      businessName: "RAÍZ y GRANO",
-      taxId: "",
-      address: "",
-      phone: "",
-      email: "",
-      additionalInfo: "",
-    }
+    return defaultFiscalData(orgId)
   }
 }
 
-// Guardar datos fiscales
-export const saveFiscalData = async (data: FiscalData): Promise<void> => {
+// Guardar datos fiscales (org-scoped)
+export const saveFiscalData = async (orgId: string, data: FiscalData): Promise<void> => {
   if (!db) throw new Error("Firestore no está inicializado")
+  if (!orgId) throw new Error("orgId es requerido")
 
   try {
-    // Usar la colección 'config' para el documento 'fiscalData'
-    const fiscalRef = doc(db, CONFIG_COLLECTION, FISCAL_DOC)
-    await setDoc(fiscalRef, data)
+    await setDoc(fiscalRef(orgId), data)
   } catch (error: any) {
     console.error("Error al guardar datos fiscales:", error)
     throw error

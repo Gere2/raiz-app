@@ -54,6 +54,21 @@ export type Ticket = {
 
 const getTicketsCollection = (orgId: string) => collection(db, "orgs", orgId, "tickets")
 
+// Quita claves `undefined` en profundidad (Firestore las rechaza), preservando
+// arrays y objetos especiales de Firestore (Timestamp, serverTimestamp()/FieldValue,
+// Date) — por eso NO usamos JSON.stringify, que destruiría esos sentinels.
+function pruneUndefined<T>(value: T): T {
+  if (Array.isArray(value)) return value.map((v) => pruneUndefined(v)) as unknown as T
+  if (value !== null && typeof value === "object" && Object.getPrototypeOf(value as object) === Object.prototype) {
+    const out: Record<string, unknown> = {}
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      if (v !== undefined) out[k] = pruneUndefined(v)
+    }
+    return out as T
+  }
+  return value
+}
+
 export const getTickets = async (orgId: string): Promise<Ticket[]> => {
   if (!db) throw new Error("Firestore no está inicializado")
   if (!orgId) throw new Error("orgId es requerido")
@@ -105,7 +120,7 @@ export const addTicket = async (
       return sum + (item.product.price + modCost) * item.quantity
     }, 0)
     const ticketNumber = await getNextTicketNumber(orgId) // org-scoped; Raíz sigue en el contador top-level
-    const fiscalData = await getFiscalData()
+    const fiscalData = await getFiscalData(orgId)
 
     // ── Enriquecer datos (incluye weather + calendario) ──
     const enrichment = await enrichTransactionAsync(items, "POS")
@@ -181,14 +196,11 @@ export const addTicket = async (
       selectedCustomerName: selectedCustomerName || null,
     }
 
-    // Firestore rechaza valores `undefined`. Los cafés que entran por el bridge
-    // enverde (custom token) no tienen displayName/email → `userName` queda undefined
-    // (y algún campo de enrichment podría faltar si una fuente externa falla).
-    // Quitamos las claves undefined para que la venta no falle. Raíz no se ve
-    // afectada: sus tickets siempre traen userName, así que no se omite nada.
-    const ticketDataClean = Object.fromEntries(
-      Object.entries(ticketData).filter(([, v]) => v !== undefined)
-    )
+    // Firestore rechaza valores `undefined` (los cafés del bridge enverde no tienen
+    // displayName/email → userName undefined; algún campo de enrichment podría faltar).
+    // Prune EN PROFUNDIDAD para que la venta nunca falle por un undefined anidado
+    // (p.ej. dentro de items[].product). Raíz no se ve afectada.
+    const ticketDataClean = pruneUndefined(ticketData)
     const docRef = await addDoc(getTicketsCollection(orgId), ticketDataClean)
 
     // Stats — await para garantizar que se registren antes de devolver

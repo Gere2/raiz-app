@@ -86,7 +86,7 @@ export function TicketDetail({ ticket, onDelete }: TicketDetailProps) {
   return (
     <div className="py-4">
       <div className="text-center mb-4">
-        <h3 className="font-bold text-lg">{ticket.fiscalData?.businessName || "RAÍZ y GRANO"}</h3>
+        {ticket.fiscalData?.businessName && <h3 className="font-bold text-lg">{ticket.fiscalData.businessName}</h3>}
         {ticket.fiscalData?.taxId && <p className="text-sm">RFC: {ticket.fiscalData.taxId}</p>}
         {ticket.fiscalData?.address && <p className="text-sm">{ticket.fiscalData.address}</p>}
         {ticket.fiscalData?.phone && <p className="text-sm">Tel: {ticket.fiscalData.phone}</p>}
