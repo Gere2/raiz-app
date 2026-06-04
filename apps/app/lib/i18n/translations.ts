@@ -152,6 +152,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "login.error.weak": "La contraseña es demasiado débil",
     "login.error.toomany": "Demasiados intentos. Espera un momento.",
     "login.error.generic": "Error al autenticar",
+    "login.forgot": "¿Olvidaste tu contraseña?",
+    "login.forgot.needEmail": "Escribe tu email arriba y vuelve a pulsar.",
+    "login.forgot.sent": "Te enviamos un correo para restablecer tu contraseña. Revisa tu bandeja (y la carpeta de spam).",
+    "login.forgot.error": "No pudimos enviar el correo. Revisa que el email sea correcto.",
 
     // Notifications
     "notif.title": "¿Activar notificaciones?",
@@ -408,6 +412,10 @@ export const translations: Record<Locale, Record<string, string>> = {
     "login.error.weak": "Password is too weak",
     "login.error.toomany": "Too many attempts. Please wait.",
     "login.error.generic": "Authentication error",
+    "login.forgot": "Forgot your password?",
+    "login.forgot.needEmail": "Enter your email above, then tap again.",
+    "login.forgot.sent": "We've sent you a password reset email. Check your inbox (and spam folder).",
+    "login.forgot.error": "We couldn't send the email. Make sure the address is correct.",
 
     "notif.title": "Enable notifications?",
     "notif.subtitle": "We'll let you know when your order is ready to pick up",

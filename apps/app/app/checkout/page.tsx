@@ -14,6 +14,8 @@ import { updateCustomerProfile } from "@/lib/customer-profile-service";
 import { db } from "@/lib/firebase";
 import Link from "next/link";
 import { CreditCard, Clock, Zap, ArrowLeft } from "lucide-react";
+import { ClosedBanner } from "@/components/closed-banner";
+import { useAppOrderingStatus, fetchOrderingEvaluation } from "@/lib/app-ordering-status";
 
 function LoadingSpinner() {
   return (
@@ -28,6 +30,8 @@ function CheckoutContent() {
   const { items, clearCart } = useCart();
   const router = useRouter();
   const { locale, t } = useLanguage();
+  const { evaluation: ordering } = useAppOrderingStatus();
+  const orderingOpen = ordering.open;
 
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [loadingIntent, setLoadingIntent] = useState(false);
@@ -45,7 +49,8 @@ function CheckoutContent() {
 
   useEffect(() => {
     // Validate that cart has items before proceeding
-    if (!user || items.length === 0 || amountInCents < 50) return;
+    // No creamos intención de pago si los pedidos por la app están cerrados.
+    if (!user || items.length === 0 || amountInCents < 50 || !orderingOpen) return;
 
     // Explicit null check before accessing user properties
     if (!user.email && !user.displayName) {
@@ -98,7 +103,7 @@ function CheckoutContent() {
     return () => {
       cancelled = true;
     };
-  }, [user, amountInCents, items.length]);
+  }, [user, amountInCents, items.length, orderingOpen]);
 
   if (authLoading) return <LoadingSpinner />;
   if (!user) return null;
@@ -113,6 +118,26 @@ function CheckoutContent() {
         <Link
           href="/"
           className="rounded-full bg-leaf-600 px-6 py-2.5 text-sm text-white hover:bg-leaf-700 transition-colors"
+        >
+          {t("checkout.empty.cta") || "Volver al menú"}
+        </Link>
+      </div>
+    );
+
+  // Pedidos cerrados (pausa manual o fuera de horario): no mostramos el pago.
+  if (!orderingOpen)
+    return (
+      <div className="space-y-5 animate-fade-up pb-8">
+        <div className="flex items-center gap-3">
+          <Link href="/cart" className="p-2 hover:bg-brand-100 rounded-lg transition-colors">
+            <ArrowLeft className="h-5 w-5 text-brand-600" />
+          </Link>
+          <h1 className="text-xl font-bold text-brand-900">{t("checkout.title") || "Checkout"}</h1>
+        </div>
+        <ClosedBanner />
+        <Link
+          href="/"
+          className="block rounded-full bg-leaf-600 px-6 py-2.5 text-center text-sm text-white hover:bg-leaf-700 transition-colors"
         >
           {t("checkout.empty.cta") || "Volver al menú"}
         </Link>
@@ -355,6 +380,13 @@ function PaymentForm({
         setPayError(t("checkout.error.pasttime") || "La hora no puede ser en el pasado");
         return;
       }
+    }
+
+    // Reconfirmar estado antes de cobrar (por si cerraron mientras estaba aquí).
+    const ordering = await fetchOrderingEvaluation();
+    if (!ordering.open) {
+      setPayError(ordering.message || "Los pedidos por la app están cerrados ahora mismo.");
+      return;
     }
 
     setProcessing(true);

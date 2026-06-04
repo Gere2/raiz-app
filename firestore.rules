@@ -62,6 +62,15 @@ service cloud.firestore {
       allow write: if isStaff();
     }
 
+    // ─── App ordering status (abierto/cerrado + horario) ────────
+    // Lectura pública: la app (incluso sin sesión) debe poder mostrar
+    // "Cerrado de X a Y" antes de armar el carrito. Escritura: solo un
+    // miembro de la org — el staff lo edita desde el POS (Configuración).
+    match /app_ordering_status/{orgId} {
+      allow read: if true;
+      allow write: if isOrgMember(orgId);
+    }
+
     match /config/{doc=**} {
       allow read: if signedIn();
       allow write: if isAdmin();

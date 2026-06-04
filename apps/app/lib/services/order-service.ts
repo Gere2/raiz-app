@@ -15,6 +15,7 @@ import {
 } from "firebase/firestore"
 import { db } from "@/lib/firebase"
 import { enrichAppOrder } from "@/lib/enrich-app-order"
+import { fetchOrderingEvaluation } from "@/lib/app-ordering-status"
 
 export interface CreateOrderInput {
   userId: string
@@ -35,6 +36,12 @@ export interface CreateOrderInput {
 }
 
 export async function createOrder(input: CreateOrderInput) {
+  // Bloqueo: si los pedidos por la app están en pausa / fuera de horario, no se crea.
+  const ordering = await fetchOrderingEvaluation()
+  if (!ordering.open) {
+    throw new Error(ordering.message || "Los pedidos por la app están cerrados ahora mismo.")
+  }
+
   const enrichData = await enrichAppOrder(
     input.items,
     input.userId

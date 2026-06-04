@@ -1,6 +1,7 @@
 "use client";
 import { useEffect, useState, useRef, useCallback, useMemo, memo } from "react"; import { collection, getDocs } from "firebase/firestore"; import { db } from "@/lib/firebase"; import { Product, MilkOption } from "@/types"; import { useCart } from "@/components/cart-provider"; import { useLanguage } from "@/components/language-provider"; import { translateProduct, translateCategory } from "@/lib/i18n/product-translations"; import { toast } from "sonner"; import { CategoryIcon, ProductFallbackIcon, MilkIcon } from "@/lib/icons"; import { UtensilsCrossed, Leaf, Plus, MapPin } from "lucide-react"; import Image from "next/image"
 import dynamic from "next/dynamic"
+import { ClosedBanner } from "@/components/closed-banner"
 
 // La card del bono no es crítica para el catálogo. Cargarla dinámicamente
 // (ssr=false) saca ~10 KB del bundle inicial y evita que la home espere a
@@ -206,6 +207,7 @@ export default function CatalogPage() {
   return (
     <div className="space-y-5">
       <div className="animate-fade-up"><h1 className="text-2xl font-bold text-brand-900">{t("catalog.greeting")}</h1><p className="mt-1 text-sm text-brand-500">{t("catalog.subtitle")}</p></div>
+      <ClosedBanner />
       {/* Bono Supervivencia Exámenes — la card devuelve null sin sesión, así que no rompe el catálogo público. */}
       <ExamPassCard variant="compact" />
       <div className="sticky top-14 z-40 -mx-4 bg-brand-50/95 backdrop-blur-md px-4 py-2.5 border-b border-brand-100/50">

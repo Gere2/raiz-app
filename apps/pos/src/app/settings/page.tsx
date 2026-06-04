@@ -19,6 +19,7 @@ import {
   Zap,
   Shield,
   Smartphone,
+  Clock,
 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -40,6 +41,14 @@ import { AuthenticatedLayout } from "@/components/authenticated-layout"
 import { toast } from "@/components/ui/use-toast"
 import { Toaster } from "@/components/ui/toaster"
 import { getFiscalData, saveFiscalData, initializeTicketCounter, type FiscalData } from "@/lib/fiscal-service"
+import {
+  getAppOrderingStatus,
+  saveAppOrderingStatus,
+  defaultAppOrderingStatus,
+  WEEKDAY_LABELS,
+  type AppOrderingStatus,
+  type DayHours,
+} from "@/lib/app-ordering-service"
 import { getLastTicketNumber } from "@/lib/ticket-service"
 import { Loader2 } from "lucide-react"
 import { RaizGranoLogo } from "@/components/cafe-icons"
@@ -79,10 +88,21 @@ export default function SettingsPage() {
   const [loadingCounter, setLoadingCounter] = useState(false)
   const [savingCounter, setSavingCounter] = useState(false)
 
+  // Pedidos por la App (abierto/cerrado + horario)
+  const [appOrdering, setAppOrdering] = useState<AppOrderingStatus>(defaultAppOrderingStatus())
+  const [loadingAppOrdering, setLoadingAppOrdering] = useState(false)
+  const [savingAppOrdering, setSavingAppOrdering] = useState(false)
+
   useEffect(() => {
     loadFiscalData()
     loadTicketCounter()
   }, [])
+
+  // El orgId llega async (useOrg); cargamos el estado de pedidos cuando esté listo.
+  useEffect(() => {
+    if (orgId) loadAppOrdering()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId])
 
   const loadFiscalData = async () => {
     try {
@@ -120,6 +140,53 @@ export default function SettingsPage() {
       setLoadingCounter(false)
     }
   }
+
+  const loadAppOrdering = async () => {
+    if (!orgId) return
+    try {
+      setLoadingAppOrdering(true)
+      const data = await getAppOrderingStatus(orgId)
+      setAppOrdering(data)
+    } catch (error) {
+      console.error("Error al cargar estado de pedidos por la app:", error)
+    } finally {
+      setLoadingAppOrdering(false)
+    }
+  }
+
+  // Guarda con actualización optimista y revierte si falla.
+  const persistAppOrdering = async (next: AppOrderingStatus, title: string, description: string) => {
+    if (!orgId) {
+      toast({ variant: "destructive", title: "Error", description: "No hay café seleccionado" })
+      return
+    }
+    const prev = appOrdering
+    setAppOrdering(next)
+    try {
+      setSavingAppOrdering(true)
+      await saveAppOrderingStatus(orgId, next)
+      toast({ title, description })
+    } catch (error) {
+      console.error("Error al guardar pedidos por la app:", error)
+      setAppOrdering(prev)
+      toast({ variant: "destructive", title: "Error", description: "No se pudo guardar el estado de pedidos" })
+    } finally {
+      setSavingAppOrdering(false)
+    }
+  }
+
+  const handleToggleAccepting = (next: boolean) =>
+    persistAppOrdering(
+      { ...appOrdering, acceptingOrders: next },
+      next ? "Pedidos reanudados" : "Pedidos en pausa",
+      next ? "La app vuelve a aceptar pedidos." : "La app no aceptará pedidos hasta que reabras.",
+    )
+
+  const updateDay = (d: number, patch: Partial<DayHours>) =>
+    setAppOrdering((p) => ({ ...p, hours: { ...p.hours, [d]: { ...p.hours[d], ...patch } } }))
+
+  const handleSaveAppOrdering = () =>
+    persistAppOrdering(appOrdering, "Horario guardado", "Se actualizó el horario de pedidos por la app.")
 
   const handleSaveBusinessInfo = () => {
     // En una app real, esto guardaría la información en Firebase
@@ -404,6 +471,122 @@ export default function SettingsPage() {
               </div>
             </DialogContent>
           </Dialog>
+
+          {/* Pedidos por la App */}
+          <Card>
+            <CardContent className="p-4 space-y-4">
+              <div className="flex items-center">
+                <Smartphone className="h-5 w-5 mr-3 text-primary" />
+                <div className="flex-1">
+                  <h3 className="font-medium">Pedidos por la App</h3>
+                  <p className="text-sm text-muted-foreground">
+                    {loadingAppOrdering
+                      ? "Cargando..."
+                      : appOrdering.acceptingOrders
+                        ? "Aceptando pedidos"
+                        : "En pausa — la app está cerrada"}
+                  </p>
+                </div>
+                <Switch
+                  checked={appOrdering.acceptingOrders}
+                  disabled={!orgId || loadingAppOrdering || savingAppOrdering}
+                  onCheckedChange={handleToggleAccepting}
+                />
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                Apaga este interruptor cuando os vayáis al descanso: la app deja de aceptar pedidos al
+                instante y muestra tu mensaje. Vuelve a encenderlo al reabrir.
+              </p>
+
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline" className="w-full" disabled={!orgId}>
+                    <Clock className="mr-2 h-4 w-4" />
+                    Horario y mensaje
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="max-h-[90vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>Horario de pedidos por la App</DialogTitle>
+                    <DialogDescription>
+                      Define cuándo la app acepta pedidos y el mensaje que verá la clienta cuando esté cerrado.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-2">
+                    <div className="flex items-center justify-between rounded-lg border p-3">
+                      <div className="pr-3">
+                        <Label className="font-medium">Aplicar horario automático</Label>
+                        <p className="text-xs text-muted-foreground">
+                          Si está activo, la app se cierra sola fuera del horario de cada día.
+                        </p>
+                      </div>
+                      <Switch
+                        checked={appOrdering.useSchedule}
+                        onCheckedChange={(v) => setAppOrdering((p) => ({ ...p, useSchedule: v }))}
+                      />
+                    </div>
+
+                    <div className={appOrdering.useSchedule ? "space-y-2" : "space-y-2 opacity-50 pointer-events-none"}>
+                      {WEEKDAY_LABELS.map((label, d) => {
+                        const day = appOrdering.hours[d]
+                        return (
+                          <div key={d} className="flex items-center gap-2">
+                            <span className="w-16 shrink-0 text-sm">{label}</span>
+                            {day.closed ? (
+                              <span className="flex-1 text-sm text-muted-foreground">Cerrado</span>
+                            ) : (
+                              <div className="flex flex-1 items-center gap-1">
+                                <Input
+                                  type="time"
+                                  value={day.open}
+                                  onChange={(e) => updateDay(d, { open: e.target.value })}
+                                  className="h-8"
+                                />
+                                <span className="text-xs text-muted-foreground">a</span>
+                                <Input
+                                  type="time"
+                                  value={day.close}
+                                  onChange={(e) => updateDay(d, { close: e.target.value })}
+                                  className="h-8"
+                                />
+                              </div>
+                            )}
+                            <Switch
+                              checked={!day.closed}
+                              onCheckedChange={(v) => updateDay(d, { closed: !v })}
+                            />
+                          </div>
+                        )
+                      })}
+                    </div>
+
+                    <div className="grid gap-2">
+                      <Label htmlFor="closed-message">Mensaje cuando está cerrado</Label>
+                      <Textarea
+                        id="closed-message"
+                        value={appOrdering.closedMessage}
+                        onChange={(e) => setAppOrdering((p) => ({ ...p, closedMessage: e.target.value }))}
+                        rows={2}
+                        placeholder="Estamos en una pausa, volvemos a las 16:00…"
+                      />
+                    </div>
+
+                    <Button onClick={handleSaveAppOrdering} disabled={savingAppOrdering}>
+                      {savingAppOrdering ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          Guardando...
+                        </>
+                      ) : (
+                        "Guardar horario"
+                      )}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </CardContent>
+          </Card>
 
           {/* Respaldo y Restauración */}
           <Card>

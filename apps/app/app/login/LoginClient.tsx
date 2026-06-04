@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from "firebase/auth";
 import type { FirebaseError } from "firebase/app";
 import { doc, setDoc, Timestamp } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
@@ -36,6 +36,7 @@ export default function LoginClient() {
   const [isRegister, setIsRegister] = useState(false);
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<{ email?: string; password?: string; name?: string; server?: string }>({});
+  const [infoMsg, setInfoMsg] = useState<string | null>(null);
   const router = useRouter();
   const searchParams = useSearchParams();
   // Validate redirect URL to prevent open redirect attacks
@@ -50,6 +51,7 @@ export default function LoginClient() {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (loading) return;
+    setInfoMsg(null);
     const newErrors: typeof errors = {};
 
     if (!email.trim()) newErrors.email = t("login.error.email");
@@ -127,6 +129,37 @@ export default function LoginClient() {
     }
   };
 
+  // Recuperación de contraseña vía email nativo de Firebase (NO usa Resend).
+  // Mensaje neutro siempre que la petición no falle por formato/rate-limit:
+  // así no revelamos si un email existe o no (anti-enumeración).
+  const handleForgotPassword = async () => {
+    setInfoMsg(null);
+    const mail = email.trim();
+    if (!mail || !isValidEmail(mail)) {
+      setErrors({ email: t("login.forgot.needEmail") });
+      return;
+    }
+    try {
+      setLoading(true);
+      await sendPasswordResetEmail(auth, mail);
+      setErrors({});
+      setInfoMsg(t("login.forgot.sent"));
+    } catch (error: unknown) {
+      const fb = error as FirebaseError;
+      const code = typeof fb?.code === "string" ? fb.code : "";
+      if (code === "auth/too-many-requests") {
+        setErrors({ server: t("login.error.toomany") });
+      } else if (code === "auth/invalid-email") {
+        setErrors({ email: t("login.error.invalid") });
+      } else {
+        // user-not-found u otros: mensaje neutro de "enviado" (anti-enumeración).
+        setInfoMsg(t("login.forgot.sent"));
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const typeOptions: { value: UserType; labelKey: string }[] = [
     { value: "student", labelKey: "login.usertype.student" },
     { value: "teacher", labelKey: "login.usertype.teacher" },
@@ -160,6 +193,11 @@ export default function LoginClient() {
             {errors.server && (
               <div className="rounded-xl bg-red-50 border border-red-200 px-3 py-2.5 text-sm text-red-700">
                 {errors.server}
+              </div>
+            )}
+            {infoMsg && (
+              <div className="rounded-xl bg-leaf-50 border border-leaf-200 px-3 py-2.5 text-sm text-leaf-800">
+                {infoMsg}
               </div>
             )}
             {isRegister && (
@@ -217,6 +255,17 @@ export default function LoginClient() {
                 placeholder={t("login.password.placeholder")} autoComplete={isRegister ? "new-password" : "current-password"} />
               {errors.password && <p className="text-xs text-red-600 mt-1">{errors.password}</p>}
             </div>
+
+            {!isRegister && (
+              <button
+                type="button"
+                onClick={handleForgotPassword}
+                disabled={loading}
+                className="-mt-1 block w-full text-right text-xs font-medium text-leaf-700 hover:text-leaf-800 disabled:opacity-50"
+              >
+                {t("login.forgot")}
+              </button>
+            )}
 
             <button type="submit" disabled={loading}
               className="w-full rounded-2xl bg-leaf-600 py-3.5 text-sm font-semibold text-white hover:bg-leaf-700 active:scale-[0.98] disabled:opacity-50 shadow-lg shadow-leaf-600/20">
