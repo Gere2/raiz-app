@@ -1,8 +1,99 @@
 @import "tailwindcss";
 
+/* ─── Design tokens ───────────────────────────────────────────────────
+ * :root = tema CLARO (Raíz y Grano), valores idénticos al theme original.
+ * [data-brand="enverde"] = tema OSCURO (Enverde, paleta del funnel). El
+ * layout pone data-brand en <html> según el host → Raíz queda byte-idéntica
+ * (default = :root) y solo el host de Enverde recibe el override oscuro.
+ * Consumidos por components/theme.ts (objeto T) en estilos inline. */
 :root {
   --background: #f5f5f4;
   --foreground: #1c1917;
+
+  --t-bg: #f5f5f4;
+  --t-surface: #ffffff;
+  --t-card-bg: #ffffff;
+  --t-surface-hover: #fafaf9;
+  --t-border: #e7e5e4;
+  --t-border-light: #f5f5f4;
+  --t-text: #1c1917;
+  --t-muted: #57534e;
+  --t-dim: #a8a29e;
+  --t-accent: #3F6B2E;
+  --t-accent-light: #E7F1E1;
+  --t-accent-mid: #4F8537;
+  --t-accent-40: rgba(63, 107, 46, 0.25);
+  --t-accent-14: rgba(63, 107, 46, 0.08);
+  --t-accent-10: rgba(63, 107, 46, 0.06);
+  --t-accent-08: rgba(63, 107, 46, 0.03);
+  --t-success: #15803d;
+  --t-success-bg: #f0fdf4;
+  --t-success-20: rgba(21, 128, 61, 0.13);
+  --t-warning: #a16207;
+  --t-warning-bg: #fefce8;
+  --t-danger: #b91c1c;
+  --t-danger-bg: #fef2f2;
+  --t-danger-20: rgba(185, 28, 28, 0.13);
+  --t-info: #1d4ed8;
+  --t-info-bg: #eff6ff;
+  --t-info-20: rgba(29, 78, 216, 0.13);
+  --t-sidebar-bg: #1c1917;
+  --t-sidebar-text: #d6d3d1;
+  --t-sidebar-text-active: #ffffff;
+  --t-sidebar-accent: #8CB369;
+  --t-sidebar-hover: #292524;
+  --t-sidebar-dim: #78716c;
+  --t-sidebar-border: #292524;
+
+  --t-scrollbar: #d6d3d1;
+  --t-scrollbar-hover: #a8a29e;
+  --t-row-hover: #fafaf9;
+}
+
+/* Enverde — tema oscuro (paleta del funnel enverde.app: #0D0D10 / #151519 /
+ * texto #E4E4E7 / acento verde claro #7FB069 para contraste sobre oscuro). */
+[data-brand="enverde"] {
+  --background: #0D0D10;
+  --foreground: #E4E4E7;
+
+  --t-bg: #0D0D10;
+  --t-surface: #151519;
+  --t-card-bg: #151519;
+  --t-surface-hover: #1c1c21;
+  --t-border: #26262b;
+  --t-border-light: #1f1f24;
+  --t-text: #E4E4E7;
+  --t-muted: #A1A1AA;
+  --t-dim: #71717A;
+  --t-accent: #7FB069;
+  --t-accent-light: rgba(127, 176, 105, 0.16);
+  --t-accent-mid: #8CB369;
+  --t-accent-40: rgba(127, 176, 105, 0.30);
+  --t-accent-14: rgba(127, 176, 105, 0.10);
+  --t-accent-10: rgba(127, 176, 105, 0.07);
+  --t-accent-08: rgba(127, 176, 105, 0.04);
+  --t-success: #4ADE80;
+  --t-success-bg: rgba(74, 222, 128, 0.12);
+  --t-success-20: rgba(74, 222, 128, 0.18);
+  --t-warning: #FBBF24;
+  --t-warning-bg: rgba(251, 191, 36, 0.12);
+  --t-danger: #F87171;
+  --t-danger-bg: rgba(248, 113, 113, 0.12);
+  --t-danger-20: rgba(248, 113, 113, 0.18);
+  --t-info: #60A5FA;
+  --t-info-bg: rgba(96, 165, 250, 0.12);
+  --t-info-20: rgba(96, 165, 250, 0.18);
+  --t-sidebar-bg: #09090b;
+  --t-sidebar-text: #d4d4d8;
+  --t-sidebar-text-active: #ffffff;
+  --t-sidebar-accent: #8CB369;
+  --t-sidebar-hover: #18181b;
+  --t-sidebar-dim: #71717A;
+  --t-sidebar-border: #1f1f23;
+
+  --t-scrollbar: #3f3f46;
+  --t-scrollbar-hover: #52525b;
+  --t-row-hover: #1c1c21;
 }
 
 @theme inline {
@@ -23,8 +114,8 @@ body {
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible {
-  border-color: #d97706 !important;
-  box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.1) !important;
+  border-color: var(--t-accent) !important;
+  box-shadow: 0 0 0 3px var(--t-accent-14) !important;
   outline: none;
 }
 
@@ -37,11 +128,11 @@ textarea:focus-visible {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d6d3d1;
+  background: var(--t-scrollbar);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a29e;
+  background: var(--t-scrollbar-hover);
 }
 
 /* Dark sidebar scrollbar */
@@ -54,7 +145,7 @@ nav::-webkit-scrollbar-thumb:hover {
 
 /* Table row hover */
 tr[style]:hover {
-  background: #fafaf9 !important;
+  background: var(--t-row-hover) !important;
 }
 
 /* Button hover helpers */

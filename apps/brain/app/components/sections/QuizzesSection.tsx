@@ -201,7 +201,7 @@ export default function QuizzesSection({ user, orgId }: { user: User; orgId: str
                     ...btnSmall,
                     color: quiz.enabled ? "#16a34a" : T.dim,
                     borderColor: quiz.enabled ? "#16a34a40" : T.border,
-                    background: quiz.enabled ? "#f0fdf4" : T.bg,
+                    background: quiz.enabled ? T.successBg : T.bg,
                   }}
                 >
                   {quiz.enabled ? "Activo" : "Inactivo"}

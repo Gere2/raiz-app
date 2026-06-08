@@ -14,7 +14,7 @@ export default function AddIngPanel({ catalog, onAdd, onClose, saving }: { catal
   const f = catalog.filter(c => c.name.toLowerCase().includes(s.toLowerCase()) || c.supplier.toLowerCase().includes(s.toLowerCase()));
 
   return (
-    <div style={{ background: T.surface, borderRadius: 12, border: `1px solid ${T.accent}40`, padding: 18, marginTop: 16 }}>
+    <div style={{ background: T.surface, borderRadius: 12, border: `1px solid ${T.accent40}`, padding: 18, marginTop: 16 }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12 }}>
         <span style={{ fontSize: 13, fontWeight: 600, color: T.accent }}>Añadir ingrediente</span>
         <button onClick={onClose} style={btnSmall}>

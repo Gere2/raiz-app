@@ -114,7 +114,7 @@ export default function RewardsSection({ user, orgId }: RewardsSectionProps) {
           <button onClick={seedRewards} disabled={saving} style={{ ...btnSmall, color: "#16a34a", borderColor: "#16a34a40" }}>
             {saving ? "..." : "🌱 Reseedear catálogo"}
           </button>
-          <button onClick={() => setShowNew(!showNew)} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+          <button onClick={() => setShowNew(!showNew)} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
             + Nueva recompensa
           </button>
         </div>
@@ -122,7 +122,7 @@ export default function RewardsSection({ user, orgId }: RewardsSectionProps) {
 
       {/* New reward form */}
       {showNew && (
-        <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, marginBottom: 16 }}>
+        <div style={{ background: T.surface, border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, marginBottom: 16 }}>
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 12, marginBottom: 12 }}>
             <input placeholder="Nombre (ES)" value={newReward.name} onChange={e => setNewReward({ ...newReward, name: e.target.value })} style={{ padding: 8, border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13 }} />
             <input placeholder="Name (EN)" value={newReward.nameEn} onChange={e => setNewReward({ ...newReward, nameEn: e.target.value })} style={{ padding: 8, border: "1px solid #e5e7eb", borderRadius: 6, fontSize: 13 }} />

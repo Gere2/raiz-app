@@ -7,6 +7,7 @@ import { signInWithGoogle, logout, consumeRedirectResult } from "../../lib/auth-
 import { authedFetch } from "../../lib/authed-fetch";
 import { useOrg } from "../hooks/useOrg";
 import { fmt, fmt4 } from "../components/theme";
+import { useBrand } from "../components/brand-context";
 
 import {
   SideBtn,
@@ -40,6 +41,7 @@ export default function EscandallPage() {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const { orgId, loadingOrgs } = useOrg(user);
+  const brand = useBrand();
 
   // Data
   const [catalog, setCatalog] = useState<CatalogItem[]>([]);
@@ -242,9 +244,9 @@ export default function EscandallPage() {
           alignItems: "center", justifyContent: "center", gap: 16,
         }}
       >
-        <div style={{ fontSize: 32 }}>\u2615</div>
+        <div style={{ fontSize: 32 }}>{brand.emoji}</div>
         <h1 style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.03em" }}>
-          Ra\u00edz y Grano \u00b7 Brain
+          {brand.chromeTitle}
         </h1>
         <button onClick={signInWithGoogle} style={btnPrimary}>
           Entrar con Google

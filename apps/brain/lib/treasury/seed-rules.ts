@@ -684,9 +684,41 @@ export const SEED_RULES: TreasuryRule[] = [
     },
     source: "seed",
     notes:
-      "NO es gasto operativo. Es retirada de Geremi como socio. Afecta al sueldo posible, no al P&L.",
+      "NO es gasto operativo. Es una disposición del socio/propietario. Afecta al sueldo posible, no al P&L.",
   },
 ];
+
+/**
+ * Reglas específicas de la CASA (Raíz y Grano): proveedores y tarjetas propios.
+ *
+ * NO deben sembrarse en cafés cliente — contaminarían su clasificación. El caso
+ * grave son las tarjetas: un PAN ajeno acabado en 9415/2288 entraría como
+ * "tarjeta pendiente" y falsearía su P&L y el sueldo posible. Los nombres de
+ * proveedor (Amor Perfecto, UFV, Zumit, Reimpulsa, Envapro/Gloop) además
+ * ensucian su lista de reglas con vendors que no conocen.
+ *
+ * Solo la org canónica (la que NO nace del funnel enverde) recibe este set.
+ * Ver `bootstrapTreasury` en store.ts.
+ */
+const OWNER_RULE_IDS = new Set<string>([
+  "seed_amor_perfecto",
+  "seed_ufv",
+  "seed_zumit",
+  "seed_reimpulsa",
+  "seed_envapro_gloop",
+  "seed_card_9415",
+  "seed_card_2288",
+]);
+
+/** Reglas universales para cualquier cafetería española — seguras de sembrar. */
+export const GENERIC_SEED_RULES: TreasuryRule[] = SEED_RULES.filter(
+  (r) => !OWNER_RULE_IDS.has(r.id)
+);
+
+/** Reglas propias de Raíz y Grano — solo para la org de la casa. */
+export const OWNER_SEED_RULES: TreasuryRule[] = SEED_RULES.filter((r) =>
+  OWNER_RULE_IDS.has(r.id)
+);
 
 /** Versión global del ruleset semilla — útil para invalidar caché futura. */
 export const SEED_RULES_VERSION = 6;

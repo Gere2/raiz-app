@@ -26,16 +26,16 @@ interface Props {
 }
 
 const STATUS_OPTIONS = [
-  { value: "new", label: "Nuevo", emoji: "🆕", bg: "#eff6ff", color: "#1d4ed8" },
-  { value: "reviewed", label: "Revisado", emoji: "👀", bg: "#fefce8", color: "#a16207" },
-  { value: "resolved", label: "Resuelto", emoji: "✅", bg: "#f0fdf4", color: "#15803d" },
-  { value: "dismissed", label: "Descartado", emoji: "🚫", bg: "#fef2f2", color: "#b91c1c" },
+  { value: "new", label: "Nuevo", emoji: "🆕", bg: T.infoBg, color: "#1d4ed8" },
+  { value: "reviewed", label: "Revisado", emoji: "👀", bg: T.warningBg, color: "#a16207" },
+  { value: "resolved", label: "Resuelto", emoji: "✅", bg: T.successBg, color: "#15803d" },
+  { value: "dismissed", label: "Descartado", emoji: "🚫", bg: T.dangerBg, color: "#b91c1c" },
 ]
 
 const TYPE_CONFIG: Record<string, { label: string; emoji: string; bg: string; color: string }> = {
-  bug: { label: "Bug", emoji: "🐛", bg: "#fef2f2", color: "#b91c1c" },
-  improvement: { label: "Mejora", emoji: "💡", bg: "#fefce8", color: "#a16207" },
-  other: { label: "Otro", emoji: "💬", bg: "#eff6ff", color: "#1d4ed8" },
+  bug: { label: "Bug", emoji: "🐛", bg: T.dangerBg, color: "#b91c1c" },
+  improvement: { label: "Mejora", emoji: "💡", bg: T.warningBg, color: "#a16207" },
+  other: { label: "Otro", emoji: "💬", bg: T.infoBg, color: "#1d4ed8" },
 }
 
 const FILTER_TABS = [
@@ -138,9 +138,9 @@ export default function ReportsSection({ user, orgId }: Props) {
       {/* KPIs */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 12, marginBottom: 20 }}>
         {[
-          { label: "Nuevos", value: counts.new, color: "#1d4ed8", bg: "#eff6ff" },
-          { label: "Revisados", value: counts.reviewed, color: "#a16207", bg: "#fefce8" },
-          { label: "Resueltos", value: counts.resolved, color: "#15803d", bg: "#f0fdf4" },
+          { label: "Nuevos", value: counts.new, color: "#1d4ed8", bg: T.infoBg },
+          { label: "Revisados", value: counts.reviewed, color: "#a16207", bg: T.warningBg },
+          { label: "Resueltos", value: counts.resolved, color: "#15803d", bg: T.successBg },
           { label: "Total", value: counts.all, color: T.text, bg: T.surface },
         ].map(k => (
           <div key={k.label} style={{ background: k.bg, border: `1px solid ${T.border}`, borderRadius: 12, padding: "14px 16px" }}>
@@ -159,7 +159,7 @@ export default function ReportsSection({ user, orgId }: Props) {
             style={{
               padding: "6px 14px", borderRadius: 8, fontSize: 12, fontFamily: T.font,
               border: `1px solid ${filter === f.value ? T.accent : T.border}`,
-              background: filter === f.value ? T.accent + "14" : T.surface,
+              background: filter === f.value ? T.accent14 : T.surface,
               color: filter === f.value ? T.accent : T.muted,
               cursor: "pointer", fontWeight: filter === f.value ? 600 : 400,
             }}

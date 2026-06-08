@@ -105,16 +105,16 @@ const ROADMAP_PRS: { id: string; title: string; status: "done" | "ready" | "pend
 /* ─── Style helpers ─── */
 
 const severityConfig: Record<Severity, { color: string; bg: string; label: string }> = {
-  critical: { color: "#991b1b", bg: "#fef2f2", label: "CRÍTICO" },
+  critical: { color: "#991b1b", bg: T.dangerBg, label: "CRÍTICO" },
   high: { color: "#92400e", bg: "#fffbeb", label: "ALTO" },
-  medium: { color: "#1e40af", bg: "#eff6ff", label: "MEDIO" },
-  low: { color: "#166534", bg: "#f0fdf4", label: "BAJO" },
+  medium: { color: "#1e40af", bg: T.infoBg, label: "MEDIO" },
+  low: { color: "#166534", bg: T.successBg, label: "BAJO" },
 };
 
 const statusConfig: Record<string, { color: string; bg: string; label: string }> = {
-  pending: { color: "#854d0e", bg: "#fefce8", label: "Pendiente" },
-  in_progress: { color: "#1e40af", bg: "#eff6ff", label: "En progreso" },
-  done: { color: "#166534", bg: "#f0fdf4", label: "Completado" },
+  pending: { color: "#854d0e", bg: T.warningBg, label: "Pendiente" },
+  in_progress: { color: "#1e40af", bg: T.infoBg, label: "En progreso" },
+  done: { color: "#166534", bg: T.successBg, label: "Completado" },
   ready: { color: "#6d28d9", bg: "#f5f3ff", label: "Listo para deploy" },
 };
 
@@ -243,7 +243,7 @@ export default function HomeSection({
           {/* Alertas críticas */}
           {(criticalBugs > 0 || criticalSec > 0) && (
             <div style={{ ...sectionCard, borderColor: "#fecaca" }}>
-              <div style={{ ...sectionHeader, background: "#fef2f2", borderBottom: "1px solid #fecaca" }}>
+              <div style={{ ...sectionHeader, background: T.dangerBg, borderBottom: "1px solid #fecaca" }}>
                 <h3 style={{ ...sectionTitle, color: "#991b1b" }}>Requiere atención inmediata</h3>
                 <span style={countBadge("#991b1b", "#fee2e2")}>{criticalBugs + criticalSec}</span>
               </div>
@@ -303,7 +303,7 @@ export default function HomeSection({
                   <h2 style={{ fontSize: 16, fontWeight: 700, color: T.text, margin: 0 }}>Rentabilidad real (últimos {dashboard.kpis.days} días)</h2>
                   <p style={{ fontSize: 12, color: T.dim, margin: "4px 0 0" }}>Datos cruzados: costes Brain + ventas POS</p>
                 </div>
-                <button onClick={onFetchDashboard} disabled={dashLoading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+                <button onClick={onFetchDashboard} disabled={dashLoading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
                   {dashLoading ? "..." : "Actualizar"}
                 </button>
               </div>
@@ -320,7 +320,7 @@ export default function HomeSection({
                   {dashboard.alerts.map((a, i) => (
                     <div key={i} style={{
                       padding: "8px 14px", marginBottom: 6, borderRadius: 8, fontSize: 12,
-                      background: a.type === "high_food_cost" ? "#fef2f2" : a.type === "missing_cost_data" ? "#fefce8" : "#f0f9ff",
+                      background: a.type === "high_food_cost" ? T.dangerBg : a.type === "missing_cost_data" ? T.warningBg : "#f0f9ff",
                       color: a.type === "high_food_cost" ? "#991b1b" : a.type === "missing_cost_data" ? "#854d0e" : "#1e40af",
                       border: `1px solid ${a.type === "high_food_cost" ? "#fecaca" : a.type === "missing_cost_data" ? "#fde68a" : "#bfdbfe"}`,
                     }}>
@@ -347,7 +347,7 @@ export default function HomeSection({
             </span>
           </div>
           {BUGS.every(b => b.status === "done") && (
-            <div style={{ padding: "16px 20px", background: "#f0fdf4", borderBottom: `1px solid ${T.border}`, fontSize: 13, color: "#166534", fontWeight: 500 }}>
+            <div style={{ padding: "16px 20px", background: T.successBg, borderBottom: `1px solid ${T.border}`, fontSize: 13, color: "#166534", fontWeight: 500 }}>
               Todos los bugs funcionales identificados han sido resueltos.
             </div>
           )}
@@ -381,7 +381,7 @@ export default function HomeSection({
             </span>
           </div>
           {SECURITY_ISSUES.every(s => s.status === "done") && (
-            <div style={{ padding: "16px 20px", background: "#f0fdf4", borderBottom: `1px solid ${T.border}`, fontSize: 13, color: "#166534", fontWeight: 500 }}>
+            <div style={{ padding: "16px 20px", background: T.successBg, borderBottom: `1px solid ${T.border}`, fontSize: 13, color: "#166534", fontWeight: 500 }}>
               Todos los problemas de seguridad identificados han sido resueltos.
             </div>
           )}
@@ -497,9 +497,9 @@ export default function HomeSection({
             {ROADMAP_PRS.map(pr => {
               const stat = statusConfig[pr.status];
               const riskColors: Record<string, { color: string; bg: string }> = {
-                low: { color: "#166534", bg: "#f0fdf4" },
+                low: { color: "#166534", bg: T.successBg },
                 medium: { color: "#92400e", bg: "#fffbeb" },
-                high: { color: "#991b1b", bg: "#fef2f2" },
+                high: { color: "#991b1b", bg: T.dangerBg },
               };
               const risk = riskColors[pr.risk];
               return (

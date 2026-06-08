@@ -90,7 +90,7 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
           <h1 style={pageTitle}>Propuestas de temporada</h1>
           <p style={pageSub}>Recetas sugeridas según estación, clima y calendario académico</p>
         </div>
-        <button onClick={fetchData} disabled={loading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+        <button onClick={fetchData} disabled={loading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
           {loading ? "..." : "↻ Actualizar"}
         </button>
       </div>
@@ -109,7 +109,7 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
           <div style={{ fontSize: 11, color: T.dim, textTransform: "uppercase", fontWeight: 600, marginBottom: 4 }}>Período académico</div>
           <div style={{ fontSize: 14, fontWeight: 500 }}>
             {data.academicPeriod}
-            {data.isExamWeek && <span style={{ ...badge, marginLeft: 8, color: "#dc2626", background: "#fef2f2" }}>Exámenes</span>}
+            {data.isExamWeek && <span style={{ ...badge, marginLeft: 8, color: "#dc2626", background: T.dangerBg }}>Exámenes</span>}
           </div>
         </div>
         <div>
@@ -131,11 +131,11 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
 
       {/* ── Filters ── */}
       <div style={{ display: "flex", gap: 6, marginBottom: 20, flexWrap: "wrap" }}>
-        <button onClick={() => setFilterTag("all")} style={{ ...btnSmall, ...(filterTag === "all" ? { background: T.accent + "14", color: T.accent, borderColor: T.accent } : {}) }}>
+        <button onClick={() => setFilterTag("all")} style={{ ...btnSmall, ...(filterTag === "all" ? { background: T.accent14, color: T.accent, borderColor: T.accent } : {}) }}>
           Todas ({data.suggestions.length})
         </button>
         {allTags.map(tag => (
-          <button key={tag} onClick={() => setFilterTag(tag)} style={{ ...btnSmall, ...(filterTag === tag ? { background: T.accent + "14", color: T.accent, borderColor: T.accent } : {}) }}>
+          <button key={tag} onClick={() => setFilterTag(tag)} style={{ ...btnSmall, ...(filterTag === tag ? { background: T.accent14, color: T.accent, borderColor: T.accent } : {}) }}>
             {tag} ({data.suggestions.filter(s => s.tags.includes(tag)).length})
           </button>
         ))}
@@ -158,7 +158,7 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
 
             {/* Tags */}
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginBottom: 12 }}>
-              {s.weatherFit && <span style={{ ...badge, fontSize: 10, color: "#2563eb", background: "#eff6ff" }}>🌤 Clima</span>}
+              {s.weatherFit && <span style={{ ...badge, fontSize: 10, color: "#2563eb", background: T.infoBg }}>🌤 Clima</span>}
               {s.academicFit && <span style={{ ...badge, fontSize: 10, color: "#7c3aed", background: "#f5f3ff" }}>🎓 Académico</span>}
               {s.trendingInArea && <span style={{ ...badge, fontSize: 10, color: "#059669", background: "#ecfdf5" }}>📈 Tendencia</span>}
               <span style={{ ...badge, fontSize: 10, color: difficultyColor[s.difficulty], background: difficultyColor[s.difficulty] + "14" }}>
@@ -168,7 +168,7 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
             </div>
 
             {/* Reason */}
-            <div style={{ fontSize: 11, color: T.accent, fontWeight: 500, marginBottom: 12, padding: "6px 10px", background: T.accent + "08", borderRadius: 6 }}>
+            <div style={{ fontSize: 11, color: T.accent, fontWeight: 500, marginBottom: 12, padding: "6px 10px", background: T.accent08, borderRadius: 6 }}>
               {s.reason}
             </div>
 
@@ -191,7 +191,7 @@ export default function SeasonalRecipesSection({ user, orgId, authedFetch }: Sea
                 {s.ingredients.map((ing, i) => (
                   <span key={i} style={{
                     fontSize: 11, padding: "2px 8px", borderRadius: 4,
-                    background: ing.inCatalog ? "#f0fdf4" : "#fefce8",
+                    background: ing.inCatalog ? T.successBg : T.warningBg,
                     color: ing.inCatalog ? "#16a34a" : "#854d0e",
                     border: `1px solid ${ing.inCatalog ? "#bbf7d0" : "#fde68a"}`,
                   }}>

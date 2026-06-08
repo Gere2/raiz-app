@@ -5,6 +5,7 @@ import type { User } from "firebase/auth";
 import { authedFetch } from "../../../lib/authed-fetch";
 import { T, page, pageTitle, pageSub, tbl, trHead, trBody, th, td, tdR, btnPrimary, btnSmall, btnGhost, input, fmt, badge } from "../theme";
 import PanelDeVerdad from "./treasury/PanelDeVerdad";
+import FiscalCalendar from "./treasury/FiscalCalendar";
 
 /* ─── Types ─────────────────────────────────────────────────── */
 
@@ -118,7 +119,7 @@ export default function TreasurySection({
   orgId: string;
 }) {
   /* ── State ── */
-  const [tab, setTab] = useState<"truth" | "overview" | "movements" | "upload">("truth");
+  const [tab, setTab] = useState<"truth" | "overview" | "fiscal" | "movements" | "upload">("truth");
   const [quarter, setQuarter] = useState(getCurrentQuarter());
   const [quarterData, setQuarterData] = useState<QuarterData | null>(null);
   const [movements, setMovements] = useState<BankMovement[]>([]);
@@ -268,7 +269,7 @@ export default function TreasurySection({
 
       {/* ── Tabs ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 24 }}>
-        {(["truth", "overview", "movements", "upload"] as const).map(t => (
+        {(["truth", "overview", "fiscal", "movements", "upload"] as const).map(t => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -284,7 +285,7 @@ export default function TreasurySection({
               fontFamily: T.font,
             }}
           >
-            {t === "truth" ? "Panel de Verdad" : t === "overview" ? "Vista trimestral" : t === "movements" ? "Movimientos" : "Subir extracto"}
+            {t === "truth" ? "Panel de Verdad" : t === "overview" ? "Vista trimestral" : t === "fiscal" ? "Calendario fiscal" : t === "movements" ? "Movimientos" : "Subir extracto"}
           </button>
         ))}
       </div>
@@ -292,7 +293,7 @@ export default function TreasurySection({
       {error && (
         <div style={{
           padding: "12px 16px", marginBottom: 16, borderRadius: 10,
-          background: T.dangerBg, color: T.danger, fontSize: 13, border: `1px solid ${T.danger}20`,
+          background: T.dangerBg, color: T.danger, fontSize: 13, border: `1px solid ${T.danger20}`,
         }}>
           {error}
           <button onClick={() => setError("")} style={{ marginLeft: 12, background: "none", border: "none", color: T.danger, cursor: "pointer", fontWeight: 600 }}>✕</button>
@@ -301,6 +302,9 @@ export default function TreasurySection({
 
       {/* ════════════ PANEL DE VERDAD (PR7) ════════════ */}
       {tab === "truth" && <PanelDeVerdad user={user} orgId={orgId} />}
+
+      {/* ════════════ CALENDARIO FISCAL ════════════ */}
+      {tab === "fiscal" && <FiscalCalendar />}
 
       {/* ════════════ OVERVIEW TAB ════════════ */}
       {tab === "overview" && (
@@ -672,7 +676,7 @@ export default function TreasurySection({
               padding: "20px 24px",
               background: T.successBg,
               borderRadius: 12,
-              border: `1px solid ${T.success}20`,
+              border: `1px solid ${T.success20}`,
             }}>
               <h3 style={{ fontSize: 15, fontWeight: 700, color: T.success, margin: "0 0 12px" }}>
                 Extracto procesado correctamente
@@ -716,7 +720,7 @@ export default function TreasurySection({
           {suggestions.length > 0 && (
             <div style={{
               marginTop: 16, padding: "16px 20px", background: T.infoBg,
-              borderRadius: 12, border: `1px solid ${T.info}20`,
+              borderRadius: 12, border: `1px solid ${T.info20}`,
             }}>
               <h3 style={{ fontSize: 14, fontWeight: 600, color: T.info, margin: "0 0 8px" }}>
                 Categorización completada

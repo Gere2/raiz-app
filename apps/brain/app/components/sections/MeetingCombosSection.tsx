@@ -120,7 +120,7 @@ const s = {
     display: "inline-flex", alignItems: "center", gap: 6,
     padding: "6px 12px", borderRadius: 8, fontSize: 12, fontWeight: 500,
     border: `2px solid ${selected ? "#15803d" : T.border}`,
-    background: selected ? "#f0fdf4" : T.surface,
+    background: selected ? T.successBg : T.surface,
     color: selected ? "#15803d" : T.muted,
     cursor: "pointer", transition: "all 0.15s", fontFamily: T.font,
   }) as React.CSSProperties,
@@ -355,7 +355,7 @@ export default function MeetingCombosSection({ user, orgId }: Props) {
           <h1 style={pageTitle}>Combos Profesores</h1>
           <p style={pageSub}>Gestiona los combos disponibles para pedidos de profesores · {dbProducts.length} productos cargados</p>
         </div>
-        <button onClick={openCreate} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+        <button onClick={openCreate} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
           + Nuevo combo
         </button>
       </div>

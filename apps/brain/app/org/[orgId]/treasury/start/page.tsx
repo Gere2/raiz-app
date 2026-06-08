@@ -18,6 +18,12 @@ import { authedFetch } from "@/lib/authed-fetch";
 
 const ACCENT = "#3F6B2E";
 
+// Handoff al TPV (pos.raizygrano.com) oculto a propósito: en el primer-uso no
+// exponemos una tercera marca (coherencia "todo Enverde"). Reversible — poner a
+// true, o montar pos.enverde.app, reactiva el botón. La API /enverde/pos-login
+// sigue disponible para cuando exista TPV propio.
+const SHOW_POS_HANDOFF: boolean = false;
+
 type Blocks = {
   quePaso: string;
   porquePaso: string;
@@ -28,7 +34,7 @@ type Blocks = {
   queFaltaVerde: string;
 };
 
-type Phase = "upload" | "extracting" | "summarizing" | "done" | "error";
+type Phase = "upload" | "extracting" | "summarizing" | "done" | "error" | "needs_key";
 
 export default function TreasuryStartPage() {
   const params = useParams<{ orgId: string }>();
@@ -69,8 +75,10 @@ export default function TreasuryStartPage() {
           ok?: boolean;
           movements?: { date?: string }[];
           error?: string;
+          code?: string;
         };
         if (!exRes.ok || !exData.ok) {
+          if (exData.code === "NO_AI_KEY") { setPhase("needs_key"); return; }
           setError(exData.error ?? "No pudimos leer el extracto. Prueba con el PDF o CSV de tu banco.");
           setPhase("error");
           return;
@@ -101,8 +109,10 @@ export default function TreasuryStartPage() {
           ok?: boolean;
           summary?: { blocks?: Blocks };
           error?: string;
+          code?: string;
         };
         if (!sumRes.ok || !sumData.ok || !sumData.summary?.blocks) {
+          if (sumData.code === "NO_AI_KEY") { setPhase("needs_key"); return; }
           setError(sumData.error ?? "Leímos el extracto pero no pudimos generar tu resumen.");
           setPhase("error");
           return;
@@ -154,11 +164,46 @@ export default function TreasuryStartPage() {
     );
   }
 
+  /* ─── Falta clave de IA (BYOK) ────────────────────────────── */
+  if (phase === "needs_key") {
+    return (
+      <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-10">
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t-accent)" }}>
+          enverde · cupo del mes
+        </p>
+        <h1 className="mt-2 text-2xl font-black">Has agotado el cupo gratuito del mes</h1>
+        <p className="mt-2" style={{ color: "var(--t-muted)" }}>
+          Has agotado el cupo gratuito de análisis incluidos este mes. Puedes esperar al próximo
+          mes o conectar tu propia clave de Anthropic si quieres seguir analizando antes.
+        </p>
+        <a
+          href={`/org/${orgId}/settings/anthropic`}
+          className="mt-6 rounded-xl px-5 py-4 text-center text-base font-bold text-white"
+          style={{ background: ACCENT }}
+        >
+          Conectar mi clave de Anthropic →
+        </a>
+        <p className="mt-3 text-sm" style={{ color: "var(--t-muted)" }}>
+          Tu clave se guarda de forma cifrada y solo se usa para los análisis de tu negocio.
+          Anthropic puede cobrarte según su propia tarifa.
+        </p>
+        <button
+          type="button"
+          onClick={() => setPhase("upload")}
+          className="mt-4 text-sm underline"
+          style={{ color: "var(--t-muted)" }}
+        >
+          Volver
+        </button>
+      </main>
+    );
+  }
+
   /* ─── Resultado ───────────────────────────────────────────── */
   if (phase === "done" && summary) {
     return (
       <main className="mx-auto max-w-2xl px-5 py-10">
-        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
+        <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t-accent)" }}>
           Tu CFO · {month}
         </p>
         <h1 className="mt-2 text-2xl font-black">Esto es lo que dice tu mes</h1>
@@ -189,7 +234,8 @@ export default function TreasuryStartPage() {
               setMonth(null);
               setPhase("upload");
             }}
-            className="rounded-lg border border-gray-300 px-4 py-2 text-sm font-semibold"
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: "var(--t-border)" }}
           >
             Subir otro mes
           </a>
@@ -202,11 +248,11 @@ export default function TreasuryStartPage() {
   const busy = phase === "extracting" || phase === "summarizing";
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-10">
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: ACCENT }}>
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t-accent)" }}>
         enverde · tu CFO
       </p>
       <h1 className="mt-2 text-2xl font-black">Sube el extracto de tu banco</h1>
-      <p className="mt-2 text-gray-600">
+      <p className="mt-2" style={{ color: "var(--t-muted)" }}>
         PDF, CSV o XLSX. Te decimos cuánto puedes cobrar este mes, con semáforo y qué
         te falta para llegar a verde. Tarda unos segundos.
       </p>
@@ -237,26 +283,30 @@ export default function TreasuryStartPage() {
       </button>
 
       {busy && (
-        <p className="mt-3 text-sm text-gray-500">
+        <p className="mt-3 text-sm" style={{ color: "var(--t-muted)" }}>
           {phase === "extracting"
             ? "Extrayendo y clasificando tus movimientos…"
             : "Tu CFO está leyendo el mes…"}
         </p>
       )}
 
-      <button
-        type="button"
-        onClick={openPos}
-        disabled={openingPos}
-        className="mt-4 rounded-xl border px-5 py-3 text-sm font-semibold disabled:opacity-70"
-        style={{ borderColor: ACCENT, color: ACCENT }}
-      >
-        {openingPos ? "Abriendo TPV…" : "¿Ya tienes tu carta? Abrir TPV para cobrar →"}
-      </button>
-      {posError && <p className="mt-2 text-sm text-red-600">{posError}</p>}
+      {SHOW_POS_HANDOFF && (
+        <>
+          <button
+            type="button"
+            onClick={openPos}
+            disabled={openingPos}
+            className="mt-4 rounded-xl border px-5 py-3 text-sm font-semibold disabled:opacity-70"
+            style={{ borderColor: ACCENT, color: ACCENT }}
+          >
+            {openingPos ? "Abriendo TPV…" : "¿Ya tienes tu carta? Abrir TPV para cobrar →"}
+          </button>
+          {posError && <p className="mt-2 text-sm" style={{ color: "var(--t-danger)" }}>{posError}</p>}
+        </>
+      )}
 
       {phase === "error" && error && (
-        <div className="mt-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="mt-4 rounded-lg border p-3 text-sm" style={{ borderColor: "var(--t-danger)", background: "var(--t-danger-bg)", color: "var(--t-danger)" }}>
           {error}
           <button
             type="button"
@@ -268,7 +318,7 @@ export default function TreasuryStartPage() {
         </div>
       )}
 
-      <p className="mt-6 text-xs text-gray-400">
+      <p className="mt-6 text-xs" style={{ color: "var(--t-dim)" }}>
         Tus movimientos se usan solo para calcular tu sueldo y tu semáforo.
       </p>
     </main>
@@ -278,19 +328,21 @@ export default function TreasuryStartPage() {
 function Block({ title, body, highlight }: { title: string; body: string; highlight?: boolean }) {
   return (
     <section
-      className={`mt-4 rounded-xl border p-4 ${
-        highlight ? "border-gray-300 bg-gray-50" : "border-gray-200"
-      }`}
+      className="mt-4 rounded-xl border p-4"
+      style={{
+        borderColor: highlight ? "var(--t-accent)" : "var(--t-border)",
+        background: highlight ? "var(--t-accent-light)" : "var(--t-surface)",
+      }}
     >
-      <h2 className="text-sm font-bold text-gray-900">{title}</h2>
-      <p className="mt-1 leading-relaxed text-gray-700">{body}</p>
+      <h2 className="text-sm font-bold" style={{ color: "var(--t-text)" }}>{title}</h2>
+      <p className="mt-1 leading-relaxed" style={{ color: "var(--t-muted)" }}>{body}</p>
     </section>
   );
 }
 
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-1 px-6 text-center text-gray-700">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-1 px-6 text-center" style={{ color: "var(--t-muted)" }}>
       {children}
     </main>
   );

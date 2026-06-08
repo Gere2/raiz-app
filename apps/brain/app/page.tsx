@@ -11,6 +11,7 @@ import { T, page, pageTitle, pageSub, modalTitle, tableWrap, tableHead, tableRow
 import { Shell, NavBtn, NavGroup, Kpi, ActionCard, FilterTab, Overlay, Fld, EditableList, ErrorBanner } from "./components/ui";
 import { useOrg } from "./hooks/useOrg";
 import { useOrgConfig } from "./hooks/useOrgConfig";
+import { useBrand } from "./components/brand-context";
 
 /* ── Section components (lazy-loaded for code splitting) ── */
 const InvoiceSection = dynamic(() => import("./components/invoice-section"), { ssr: false });
@@ -73,6 +74,7 @@ export default function BrainApp() {
   const [loading, setLoading] = useState(true);
   const { orgs, orgId, setOrgId, loadingOrgs } = useOrg(user);
   const { config: orgConfig, loading: configLoading, updateConfig, fcColor, fcBg, fcLabel } = useOrgConfig(user, orgId);
+  const brand = useBrand();
 
   /* ── Data state ── */
   const [products, setProducts] = useState<Product[]>([]);
@@ -249,7 +251,7 @@ export default function BrainApp() {
     <div style={{ minHeight: "100vh", background: T.bg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
       <div style={{ textAlign: "center" }}>
         <div style={{ width: 40, height: 40, borderRadius: "50%", border: `3px solid ${T.border}`, borderTopColor: T.accent, animation: "spin 0.8s linear infinite", margin: "0 auto 16px" }} />
-        <p style={{ color: T.dim, fontSize: 14 }}>Cargando Brain...</p>
+        <p style={{ color: T.dim, fontSize: 14 }}>{brand.loadingLabel}</p>
         <style>{`@keyframes spin { to { transform: rotate(360deg) } }`}</style>
       </div>
     </div>
@@ -257,12 +259,12 @@ export default function BrainApp() {
   if (!user) return (
     <div style={{ minHeight: "100vh", background: T.sidebarBg, display: "flex", alignItems: "center", justifyContent: "center", fontFamily: T.font }}>
       <div style={{ textAlign: "center", maxWidth: 360, padding: 40 }}>
-        <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg, #92400e, #d97706)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", boxShadow: "0 8px 32px rgba(217, 119, 6, 0.3)" }}>
-          <span style={{ fontSize: 32, filter: "grayscale(0)" }}>☕</span>
+        <div style={{ width: 72, height: 72, borderRadius: 20, background: "linear-gradient(135deg, #3F6B2E, #4F8537)", display: "flex", alignItems: "center", justifyContent: "center", margin: "0 auto 24px", boxShadow: "0 8px 32px rgba(63, 107, 46, 0.3)" }}>
+          <span style={{ fontSize: 32, filter: "grayscale(0)" }}>{brand.emoji}</span>
         </div>
-        <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.03em" }}>Raíz y Grano</h1>
-        <p style={{ color: T.sidebarDim, fontSize: 14, margin: "0 0 32px", lineHeight: 1.5 }}>Brain — Centro de operaciones</p>
-        <button onClick={signInWithGoogle} style={{ ...btnPrimary, width: "100%", justifyContent: "center", padding: "14px 24px", fontSize: 15, borderRadius: 12, background: "linear-gradient(135deg, #92400e, #b45309)" }}>Entrar con Google</button>
+        <h1 style={{ color: "#fff", fontSize: 28, fontWeight: 700, margin: "0 0 8px", letterSpacing: "-0.03em" }}>{brand.name}</h1>
+        <p style={{ color: T.sidebarDim, fontSize: 14, margin: "0 0 32px", lineHeight: 1.5 }}>{brand.loginSub}</p>
+        <button onClick={signInWithGoogle} style={{ ...btnPrimary, width: "100%", justifyContent: "center", padding: "14px 24px", fontSize: 15, borderRadius: 12, background: "linear-gradient(135deg, #3F6B2E, #2F5222)" }}>Entrar con Google</button>
       </div>
     </div>
   );
@@ -274,10 +276,10 @@ export default function BrainApp() {
       <nav style={{ width: sideOpen ? 240 : 64, background: T.sidebarBg, padding: sideOpen ? "16px 10px" : "16px 8px", display: "flex", flexDirection: "column", gap: 1, flexShrink: 0, transition: "width 0.2s ease", overflow: "hidden", overflowY: "auto" }}>
         {/* Logo */}
         <div style={{ display: "flex", alignItems: "center", gap: 10, padding: sideOpen ? "8px 14px 12px" : "8px 6px 12px", cursor: "pointer", marginBottom: 4 }} onClick={() => setSideOpen(!sideOpen)}>
-          <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #92400e, #d97706)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <span style={{ fontSize: 16 }}>☕</span>
+          <div style={{ width: 32, height: 32, borderRadius: 10, background: "linear-gradient(135deg, #3F6B2E, #4F8537)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+            <span style={{ fontSize: 16 }}>{brand.emoji}</span>
           </div>
-          {sideOpen && <div><div style={{ fontWeight: 700, fontSize: 15, color: "#fff", letterSpacing: "-0.02em" }}>Brain</div></div>}
+          {sideOpen && <div><div style={{ fontWeight: 700, fontSize: 15, color: "#fff", letterSpacing: "-0.02em" }}>{brand.sidebarTitle}</div></div>}
         </div>
 
         {/* Org switcher */}
@@ -309,12 +311,12 @@ export default function BrainApp() {
         <NavBtn label="Temporada" icon="❋" active={section === "seasonal"} onClick={() => setSection("seasonal")} open={sideOpen} />
         <NavBtn label="Proveedores" icon="▥" active={section === "suppliers" || section === "supplierDetail"} onClick={() => { setSection("suppliers"); fetchSuppliers(); }} badge={String(suppliers.length)} open={sideOpen} />
         <NavBtn label="Facturas" icon="▤" active={section === "invoices"} onClick={() => setSection("invoices")} open={sideOpen} />
-        {showAdvanced && (
+        {showAdvanced && brand.key === "raiz" && (
           <NavBtn label="Combos Profes" icon="☕" active={section === "combos"} onClick={() => setSection("combos")} open={sideOpen} />
         )}
 
-        {/* ═══ 3 · CLIENTES — gamificación (todo experimental, solo visible en avanzado) ═══ */}
-        {showAdvanced && (
+        {/* ═══ 3 · CLIENTES — gamificación Raíz (experimental + solo marca Raíz; un café enverde no la ve) ═══ */}
+        {showAdvanced && brand.key === "raiz" && (
           <>
             <NavGroup label="Clientes" open={sideOpen} />
             <NavBtn label="Clientes" icon="◎" active={section === "customers"} onClick={() => setSection("customers")} open={sideOpen} />
@@ -329,7 +331,7 @@ export default function BrainApp() {
         <NavGroup label="Sistema" open={sideOpen} />
         <NavBtn label="Conexión POS" icon="⇄" active={section === "posLink"} onClick={() => setSection("posLink")} open={sideOpen} />
         <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
-        <NavBtn label="Control Tower" icon="◉" active={false} onClick={() => window.open("/control-tower", "_blank")} open={sideOpen} />
+        {brand.key === "raiz" && <NavBtn label="Control Tower" icon="◉" active={false} onClick={() => window.open("/control-tower", "_blank")} open={sideOpen} />}
         <NavBtn label="Escandallos App" icon="↗" active={false} onClick={() => window.open("/escandallo", "_blank")} open={sideOpen} />
         {showAdvanced && (
           <>
@@ -450,7 +452,7 @@ export default function BrainApp() {
                 <table style={tbl}><thead><tr style={trHead}>{["Producto", "Categoría", "PVP", "Coste", "Margen", "Food cost", ""].map((h, i) => <th key={i} style={{ ...th, textAlign: i >= 2 ? "right" : "left" }}>{h}</th>)}</tr></thead>
                 <tbody>{products.filter(p => { if (prodFilter === "all") return true; if (prodFilter === "no-recipe") return !recipeByProduct[p.id]; return p.categoryId === prodFilter; }).map(p => {
                   const recipe = recipeByProduct[p.id]; const tc = recipe?.totalCost || 0; const fc = recipe?.foodCostPct || 0; const margin = p.price - tc;
-                  return <tr key={p.id} style={trBody}><td style={td}><div style={{ fontWeight: 500, fontSize: 13 }}>{p.name}</div>{p.origin && <div style={{ fontSize: 10, color: T.dim }}>{p.origin}</div>}</td><td style={{ ...td, color: T.muted, fontSize: 12 }}>{p.categoryName}</td><td style={{ ...tdR, fontWeight: 600 }}>{fmt(p.price)}€</td><td style={tdR}>{recipe ? `${fmt(tc)}€` : <span style={{ color: T.dim }}>—</span>}</td><td style={{ ...tdR, color: recipe ? "#16a34a" : T.dim }}>{recipe ? `${fmt(margin)}€` : "—"}</td><td style={tdR}>{recipe ? <span style={{ ...badge, color: fcColor(fc), background: fcBg(fc) }}>{fmt(fc)}%</span> : <span style={{ color: T.dim }}>—</span>}</td><td style={{ padding: "12px 8px", textAlign: "right" }}>{recipe ? <button onClick={() => openRecipe(recipe)} style={btnSmall}>Ver</button> : <button onClick={() => createRecipeForProduct(p)} disabled={saving} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>+ Escandallo</button>}</td></tr>;
+                  return <tr key={p.id} style={trBody}><td style={td}><div style={{ fontWeight: 500, fontSize: 13 }}>{p.name}</div>{p.origin && <div style={{ fontSize: 10, color: T.dim }}>{p.origin}</div>}</td><td style={{ ...td, color: T.muted, fontSize: 12 }}>{p.categoryName}</td><td style={{ ...tdR, fontWeight: 600 }}>{fmt(p.price)}€</td><td style={tdR}>{recipe ? `${fmt(tc)}€` : <span style={{ color: T.dim }}>—</span>}</td><td style={{ ...tdR, color: recipe ? "#16a34a" : T.dim }}>{recipe ? `${fmt(margin)}€` : "—"}</td><td style={tdR}>{recipe ? <span style={{ ...badge, color: fcColor(fc), background: fcBg(fc) }}>{fmt(fc)}%</span> : <span style={{ color: T.dim }}>—</span>}</td><td style={{ padding: "12px 8px", textAlign: "right" }}>{recipe ? <button onClick={() => openRecipe(recipe)} style={btnSmall}>Ver</button> : <button onClick={() => createRecipeForProduct(p)} disabled={saving} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>+ Escandallo</button>}</td></tr>;
                 })}{products.filter(p => { if (prodFilter === "all") return true; if (prodFilter === "no-recipe") return !recipeByProduct[p.id]; return p.categoryId === prodFilter; }).length === 0 && <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: T.dim }}>No hay productos en este filtro.</td></tr>}</tbody></table>
               </div>
             )}
@@ -611,7 +613,7 @@ export default function BrainApp() {
                   <h1 style={{ ...pageTitle, marginBottom: 0 }}>{selectedRecipe.name}</h1>
                   <div style={{ display: "flex", gap: 12, alignItems: "center", marginTop: 4 }}>
                     <span style={{ color: T.dim, fontSize: 12 }}>{selectedRecipe.yieldQty} {selectedRecipe.yieldUnit}</span>
-                    {selectedRecipe.productId ? <span style={{ fontSize: 11, color: "#16a34a", background: "#f0fdf4", padding: "2px 8px", borderRadius: 4 }}>✓ Vinculado al POS</span> : <button onClick={() => setModal("linkProduct")} style={{ fontSize: 11, color: T.accent, background: "none", border: `1px solid ${T.accent}40`, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontFamily: T.font }}>Vincular a producto POS</button>}
+                    {selectedRecipe.productId ? <span style={{ fontSize: 11, color: "#16a34a", background: T.successBg, padding: "2px 8px", borderRadius: 4 }}>✓ Vinculado al POS</span> : <button onClick={() => setModal("linkProduct")} style={{ fontSize: 11, color: T.accent, background: "none", border: `1px solid ${T.accent40}`, borderRadius: 4, padding: "2px 8px", cursor: "pointer", fontFamily: T.font }}>Vincular a producto POS</button>}
                   </div>
                 </div>
               </div>
@@ -725,7 +727,7 @@ export default function BrainApp() {
             {inventory.length === 0 ? (
               <div style={{ ...tableWrap, padding: 40, textAlign: "center" }}><p style={{ color: T.muted }}>Inventario POS vacío.</p></div>
             ) : (
-              <div style={tableWrap}><table style={tbl}><thead><tr style={trHead}>{["Artículo", "Stock", "Mín", "Proveedor", "Estado"].map((h, i) => <th key={i} style={{ ...th, textAlign: i >= 1 && i <= 2 ? "right" : "left" }}>{h}</th>)}</tr></thead><tbody>{inventory.map(it => { const low = it.stock <= it.minStock; return <tr key={it.id} style={trBody}><td style={td}><div style={{ fontWeight: 500 }}>{it.name}</div><div style={{ fontSize: 11, color: T.dim }}>{it.categoryName}</div></td><td style={{ ...tdR, color: low ? "#dc2626" : T.text }}>{it.stock} {it.unit}</td><td style={{ ...tdR, color: T.dim }}>{it.minStock}</td><td style={{ ...td, color: T.muted, fontSize: 13 }}>{it.supplier}</td><td style={td}>{low ? <span style={{ ...badge, color: "#dc2626", background: "#fef2f2" }}>Stock bajo</span> : <span style={{ color: "#16a34a", fontSize: 11 }}>OK</span>}</td></tr>; })}</tbody></table></div>
+              <div style={tableWrap}><table style={tbl}><thead><tr style={trHead}>{["Artículo", "Stock", "Mín", "Proveedor", "Estado"].map((h, i) => <th key={i} style={{ ...th, textAlign: i >= 1 && i <= 2 ? "right" : "left" }}>{h}</th>)}</tr></thead><tbody>{inventory.map(it => { const low = it.stock <= it.minStock; return <tr key={it.id} style={trBody}><td style={td}><div style={{ fontWeight: 500 }}>{it.name}</div><div style={{ fontSize: 11, color: T.dim }}>{it.categoryName}</div></td><td style={{ ...tdR, color: low ? "#dc2626" : T.text }}>{it.stock} {it.unit}</td><td style={{ ...tdR, color: T.dim }}>{it.minStock}</td><td style={{ ...td, color: T.muted, fontSize: 13 }}>{it.supplier}</td><td style={td}>{low ? <span style={{ ...badge, color: "#dc2626", background: T.dangerBg }}>Stock bajo</span> : <span style={{ color: "#16a34a", fontSize: 11 }}>OK</span>}</td></tr>; })}</tbody></table></div>
             )}
           </div>
         )}

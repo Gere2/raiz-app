@@ -144,7 +144,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
   if (loading) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Cargando datos POS y recetas...</div>;
 
   const statusColor = (s: string) => s === "linked" ? "#16a34a" : s === "price_mismatch" ? "#ca8a04" : "#dc2626";
-  const statusBg = (s: string) => s === "linked" ? "#f0fdf4" : s === "price_mismatch" ? "#fefce8" : "#fef2f2";
+  const statusBg = (s: string) => s === "linked" ? T.successBg : s === "price_mismatch" ? T.warningBg : T.dangerBg;
   const statusLabel = (s: string) => s === "linked" ? "Vinculado" : s === "price_mismatch" ? "Precio diff" : "Sin vincular";
 
   return (
@@ -155,7 +155,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
           <p style={pageSub}>Vincula productos del POS con sus escandallos para calcular costes reales</p>
         </div>
         <div style={{ display: "flex", gap: 8 }}>
-          <button onClick={syncPrices} disabled={syncing} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+          <button onClick={syncPrices} disabled={syncing} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
             {syncing ? "Sincronizando..." : "↻ Sync precios"}
           </button>
           {unlinkedCount > 0 && (
@@ -167,7 +167,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
       </div>
 
       {syncResult && (
-        <div style={{ background: "#f0fdf4", borderRadius: 8, border: "1px solid #bbf7d0", padding: "10px 16px", marginBottom: 16, fontSize: 12 }}>
+        <div style={{ background: T.successBg, borderRadius: 8, border: "1px solid #bbf7d0", padding: "10px 16px", marginBottom: 16, fontSize: 12 }}>
           ✓ {syncResult.updated} precio(s) actualizado(s)
           <button onClick={() => setSyncResult(null)} style={{ ...btnSmall, marginLeft: 12, fontSize: 10 }}>✕</button>
         </div>
@@ -192,7 +192,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
         ] as const).map(f => (
           <button key={f.key} onClick={() => setFilter(f.key)} style={{
             ...btnSmall,
-            ...(filter === f.key ? { background: T.accent + "14", color: T.accent, borderColor: T.accent } : {}),
+            ...(filter === f.key ? { background: T.accent14, color: T.accent, borderColor: T.accent } : {}),
           }}>
             {f.label} ({f.count})
           </button>
@@ -227,7 +227,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
                 <td style={tdR}>{ls.recipe ? `${fmt(ls.recipe.totalCost)}€` : <span style={{ color: T.dim }}>—</span>}</td>
                 <td style={tdR}>
                   {ls.recipe ? (
-                    <span style={{ ...badge, color: ls.recipe.foodCostPct <= 25 ? "#16a34a" : ls.recipe.foodCostPct <= 35 ? "#ca8a04" : "#dc2626", background: ls.recipe.foodCostPct <= 25 ? "#f0fdf4" : ls.recipe.foodCostPct <= 35 ? "#fefce8" : "#fef2f2" }}>
+                    <span style={{ ...badge, color: ls.recipe.foodCostPct <= 25 ? "#16a34a" : ls.recipe.foodCostPct <= 35 ? "#ca8a04" : "#dc2626", background: ls.recipe.foodCostPct <= 25 ? T.successBg : ls.recipe.foodCostPct <= 35 ? T.warningBg : T.dangerBg }}>
                       {fmt(ls.recipe.foodCostPct)}%
                     </span>
                   ) : <span style={{ color: T.dim }}>—</span>}
@@ -242,7 +242,7 @@ export default function PosLinkSection({ user, orgId, authedFetch, onOpenRecipe 
                 </td>
                 <td style={{ padding: "12px 8px", textAlign: "right" }}>
                   {ls.status === "unlinked" && (
-                    <button onClick={() => setShowLinkModal(ls.product)} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>Vincular</button>
+                    <button onClick={() => setShowLinkModal(ls.product)} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>Vincular</button>
                   )}
                   {ls.status === "price_mismatch" && (
                     <button onClick={syncPrices} disabled={syncing} style={{ ...btnSmall, color: "#ca8a04", borderColor: "#ca8a0440" }}>Sync</button>

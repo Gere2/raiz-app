@@ -10,6 +10,7 @@ import {
 } from "@/lib/treasury/monthly-aggregator";
 import { deriveCashMonth } from "@/lib/treasury/classify";
 import { generateCFOSummary, type CFOSummary, type CFOProfile } from "@/lib/treasury/cfo-summary";
+import { resolveOrgAnthropicKey } from "@/lib/secrets/org-anthropic-key";
 
 type Params = { params: Promise<{ orgId: string }> };
 
@@ -171,8 +172,13 @@ export async function POST(req: Request, { params }: Params) {
       };
     }
 
+    /* ─── Clave de IA del café (BYOK) ─────────────────────── */
+    // Se resuelve aquí (no en cache-hit): un café Enverde sin su propia clave
+    // recibe NoAiKeyError (402, code NO_AI_KEY) y la UI le pide conectarla.
+    const aiKey = await resolveOrgAnthropicKey(orgId);
+
     /* ─── Llamada a Claude ────────────────────────────────── */
-    const summary = await generateCFOSummary(snapshot, { previousSnapshot, profile });
+    const summary = await generateCFOSummary(snapshot, { previousSnapshot, profile, apiKey: aiKey });
 
     /* ─── Persiste cache ──────────────────────────────────── */
     await cacheRef.set(
@@ -191,10 +197,10 @@ export async function POST(req: Request, { params }: Params) {
       summary,
     });
   } catch (e: unknown) {
-    const err = e as { status?: number; message?: string };
+    const err = e as { status?: number; message?: string; code?: string };
     console.error("Treasury monthly-summary error:", err);
     return NextResponse.json(
-      { error: err.message ?? "Server error" },
+      { error: err.message ?? "Server error", ...(err.code ? { code: err.code } : {}) },
       { status: err.status || 500 }
     );
   }

@@ -1,42 +1,57 @@
 import type React from "react";
 
-/* ─── Design Tokens (REFINED LIGHT THEME) ───────────────────── */
+/* ─── Design Tokens (host-aware vía CSS variables) ───────────────────
+ * Los valores viven en globals.css: `:root` = tema CLARO (Raíz y Grano, sin
+ * cambios respecto al original) y `[data-brand="enverde"]` = tema OSCURO
+ * (Enverde, paleta del funnel). El layout pone `data-brand` en <html> según
+ * el host, así que el MISMO objeto T sirve ambas marcas sin tocar los ~800
+ * call-sites. Nota: no se puede concatenar alpha a `var()` ("var(--x)40" es
+ * inválido) → los tints translúcidos del acento/semánticos son tokens propios
+ * (accent40/14/10/08, success20/info20/danger20). */
 export const T = {
   font: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
   mono: "'JetBrains Mono', 'SF Mono', 'Cascadia Code', Menlo, monospace",
   /* Backgrounds */
-  bg: "#f5f5f4",           // warm stone-100
-  surface: "#ffffff",
-  cardBg: "#ffffff",
-  surfaceHover: "#fafaf9",  // stone-50
+  bg: "var(--t-bg)",
+  surface: "var(--t-surface)",
+  cardBg: "var(--t-card-bg)",
+  surfaceHover: "var(--t-surface-hover)",
   /* Borders */
-  border: "#e7e5e4",        // stone-200
-  borderLight: "#f5f5f4",   // stone-100
+  border: "var(--t-border)",
+  borderLight: "var(--t-border-light)",
   /* Text */
-  text: "#1c1917",          // stone-900
-  muted: "#57534e",         // stone-600
-  dim: "#a8a29e",           // stone-400
+  text: "var(--t-text)",
+  muted: "var(--t-muted)",
+  dim: "var(--t-dim)",
   /* Brand */
-  accent: "#92400e",        // amber-800 — warm coffee
-  accentLight: "#fef3c7",   // amber-100
-  accentMid: "#d97706",     // amber-600
+  accent: "var(--t-accent)",
+  accentLight: "var(--t-accent-light)",
+  accentMid: "var(--t-accent-mid)",
+  /* Brand — tints translúcidos (reemplazan T.accent + "NN") */
+  accent40: "var(--t-accent-40)",
+  accent14: "var(--t-accent-14)",
+  accent10: "var(--t-accent-10)",
+  accent08: "var(--t-accent-08)",
   /* Semantic */
-  success: "#15803d",       // green-700
-  successBg: "#f0fdf4",
-  warning: "#a16207",       // yellow-700
-  warningBg: "#fefce8",
-  danger: "#b91c1c",        // red-700
-  dangerBg: "#fef2f2",
-  info: "#1d4ed8",          // blue-700
-  infoBg: "#eff6ff",
-  /* Sidebar */
-  sidebarBg: "#1c1917",     // stone-900
-  sidebarText: "#d6d3d1",   // stone-300
-  sidebarTextActive: "#ffffff",
-  sidebarAccent: "#d97706", // amber-600
-  sidebarHover: "#292524",  // stone-800
-  sidebarDim: "#78716c",    // stone-500
-  sidebarBorder: "#292524",
+  success: "var(--t-success)",
+  successBg: "var(--t-success-bg)",
+  success20: "var(--t-success-20)",
+  warning: "var(--t-warning)",
+  warningBg: "var(--t-warning-bg)",
+  danger: "var(--t-danger)",
+  dangerBg: "var(--t-danger-bg)",
+  danger20: "var(--t-danger-20)",
+  info: "var(--t-info)",
+  infoBg: "var(--t-info-bg)",
+  info20: "var(--t-info-20)",
+  /* Sidebar (ya era oscuro en ambas marcas) */
+  sidebarBg: "var(--t-sidebar-bg)",
+  sidebarText: "var(--t-sidebar-text)",
+  sidebarTextActive: "var(--t-sidebar-text-active)",
+  sidebarAccent: "var(--t-sidebar-accent)",
+  sidebarHover: "var(--t-sidebar-hover)",
+  sidebarDim: "var(--t-sidebar-dim)",
+  sidebarBorder: "var(--t-sidebar-border)",
 };
 
 /* ─── Shared Styles ──────────────────────────────────────────── */

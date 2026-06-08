@@ -12,7 +12,7 @@ import { useState, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { authedFetch } from "../../../lib/authed-fetch";
 import {
-  pageTitle, pageSub, tableWrap, tbl, trHead, trBody, th, td, tdR,
+  T, pageTitle, pageSub, tableWrap, tbl, trHead, trBody, th, td, tdR,
   btnPrimary, btnSmall, btnGhost, badge, kpiBox, kpiLbl, kpiVal, fmt,
 } from "../theme";
 
@@ -288,7 +288,7 @@ export default function StagingSection({ user }: { user: User }) {
       </div>
 
       {error && (
-        <div style={{ color: "#b91c1c", background: "#fef2f2", border: "1px solid #fecaca",
+        <div style={{ color: "#b91c1c", background: T.dangerBg, border: "1px solid #fecaca",
                       padding: 8, borderRadius: 4, marginBottom: 8 }}>
           {error}
         </div>
@@ -313,7 +313,7 @@ export default function StagingSection({ user }: { user: User }) {
             <tbody>
               {filtered.map(d => (
                 <tr key={d.id} style={{ ...trBody, cursor: "pointer",
-                                         background: selectedId === d.id ? "#eff6ff" : "transparent" }}
+                                         background: selectedId === d.id ? T.infoBg : "transparent" }}
                     onClick={() => setSelectedId(d.id === selectedId ? null : d.id)}>
                   <td style={td}>
                     <div style={{ fontFamily: "monospace", fontSize: 11 }}>{d.id.slice(0, 8)}…</div>
@@ -364,7 +364,7 @@ export default function StagingSection({ user }: { user: User }) {
 
         {/* ── Side panel ─────────────────────────────────────── */}
         {selectedId && detail && (
-          <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 12, background: "#fff",
+          <div style={{ border: "1px solid #e2e8f0", borderRadius: 6, padding: 12, background: T.surface,
                         maxHeight: "80vh", overflowY: "auto" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
               <div style={{ fontWeight: 600 }}>Detalle</div>

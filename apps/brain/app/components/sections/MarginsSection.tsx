@@ -94,7 +94,7 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
             <option value={60}>60 días</option>
             <option value={90}>90 días</option>
           </select>
-          <button onClick={fetchData} disabled={loading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent + "40" }}>
+          <button onClick={fetchData} disabled={loading} style={{ ...btnSmall, color: T.accent, borderColor: T.accent40 }}>
             {loading ? "..." : "↻"}
           </button>
         </div>
@@ -117,7 +117,7 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
           {data.alerts.map((a, i) => (
             <div key={i} style={{
               padding: "10px 14px", marginBottom: 6, borderRadius: 8, fontSize: 12,
-              background: a.type === "critical" ? "#fef2f2" : a.type === "warning" ? "#fefce8" : "#f0f9ff",
+              background: a.type === "critical" ? T.dangerBg : a.type === "warning" ? T.warningBg : "#f0f9ff",
               color: a.type === "critical" ? "#991b1b" : a.type === "warning" ? "#854d0e" : "#1e40af",
               border: `1px solid ${a.type === "critical" ? "#fecaca" : a.type === "warning" ? "#fde68a" : "#bfdbfe"}`,
             }}>
@@ -168,8 +168,8 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
 
       {/* ── Vista toggle + filtros ── */}
       <div style={{ display: "flex", gap: 8, marginBottom: 16, alignItems: "center" }}>
-        <button onClick={() => setView("products")} style={{ ...btnSmall, ...(view === "products" ? { background: T.accent + "14", color: T.accent, borderColor: T.accent } : {}) }}>Por producto</button>
-        <button onClick={() => setView("categories")} style={{ ...btnSmall, ...(view === "categories" ? { background: T.accent + "14", color: T.accent, borderColor: T.accent } : {}) }}>Por categoría</button>
+        <button onClick={() => setView("products")} style={{ ...btnSmall, ...(view === "products" ? { background: T.accent14, color: T.accent, borderColor: T.accent } : {}) }}>Por producto</button>
+        <button onClick={() => setView("categories")} style={{ ...btnSmall, ...(view === "categories" ? { background: T.accent14, color: T.accent, borderColor: T.accent } : {}) }}>Por categoría</button>
         <div style={{ flex: 1 }} />
         {view === "products" && (
           <>

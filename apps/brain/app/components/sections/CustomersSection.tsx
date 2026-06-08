@@ -154,7 +154,7 @@ function AdjustModal({
     display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000,
   }
   const modalStyle: React.CSSProperties = {
-    background: "#fff", borderRadius: 14, padding: 28, width: 440,
+    background: T.surface, borderRadius: 14, padding: 28, width: 440,
     maxWidth: "calc(100vw - 32px)", boxShadow: "0 20px 60px rgba(0,0,0,0.2)",
   }
 
@@ -180,7 +180,7 @@ function AdjustModal({
 
         {result ? (
           <div>
-            <div style={{ background: "#f0fdf4", border: "1px solid #bbf7d0", borderRadius: 10, padding: 16, textAlign: "center", marginBottom: 16 }}>
+            <div style={{ background: T.successBg, border: "1px solid #bbf7d0", borderRadius: 10, padding: 16, textAlign: "center", marginBottom: 16 }}>
               <div style={{ fontSize: 16, fontWeight: 700, color: "#166534" }}>✓ Ajuste aplicado</div>
               <div style={{ fontSize: 13, color: "#15803d", marginTop: 6 }}>
                 Nuevo saldo: <strong>{result.balanceAfter.toLocaleString()} pts</strong>
@@ -226,7 +226,7 @@ function AdjustModal({
               />
             </div>
             {error && (
-              <div style={{ background: "#fef2f2", border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991b1b", marginBottom: 12 }}>
+              <div style={{ background: T.dangerBg, border: "1px solid #fecaca", borderRadius: 8, padding: "8px 12px", fontSize: 12, color: "#991b1b", marginBottom: 12 }}>
                 {error}
               </div>
             )}
@@ -234,7 +234,7 @@ function AdjustModal({
               <button
                 type="button"
                 onClick={onClose}
-                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid #e5e7eb", background: "#fff", color: T.muted, fontSize: 13, cursor: "pointer" }}
+                style={{ flex: 1, padding: "10px 0", borderRadius: 8, border: "1px solid #e5e7eb", background: T.surface, color: T.muted, fontSize: 13, cursor: "pointer" }}
               >
                 Cancelar
               </button>
@@ -283,9 +283,9 @@ function CustomerDetail({
   }, [customer.id, orgId, user])
 
   const rowBg = (tx: LoyaltyTx) => {
-    if (tx.amount > 0) return "#f0fdf4"
+    if (tx.amount > 0) return T.successBg
     if (tx.type === "redeem.reward") return "#fef3c7"
-    return "#fef2f2"
+    return T.dangerBg
   }
 
   return (
@@ -350,13 +350,13 @@ function CustomerDetail({
         <InfoChip label="Canjes totales" value={String(customer.totalRedemptions || 0)} />
         <InfoChip label="Pedidos app" value={String(customer.appOrders || 0)} />
         {customer.favoriteProducts && customer.favoriteProducts.length > 0 && (
-          <div style={{ gridColumn: "1 / -1", background: "#fff", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+          <div style={{ gridColumn: "1 / -1", background: T.surface, borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: T.dim, textTransform: "uppercase" as const, letterSpacing: "0.04em", marginBottom: 4 }}>Productos favoritos</div>
             <div style={{ fontSize: 12, color: T.text }}>{customer.favoriteProducts.slice(0, 6).join(", ")}</div>
           </div>
         )}
         {customer.unlockedBadges && customer.unlockedBadges.length > 0 && (
-          <div style={{ gridColumn: "1 / -1", background: "#fff", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+          <div style={{ gridColumn: "1 / -1", background: T.surface, borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
             <div style={{ fontSize: 10, fontWeight: 600, color: T.dim, textTransform: "uppercase" as const, letterSpacing: "0.04em", marginBottom: 4 }}>Badges desbloqueados</div>
             <div style={{ fontSize: 12, color: T.text }}>{customer.unlockedBadges.join(", ")}</div>
           </div>
@@ -399,7 +399,7 @@ function CustomerDetail({
 
 function InfoChip({ label, value, mono }: { label: string; value: string; mono?: boolean }) {
   return (
-    <div style={{ background: "#fff", borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
+    <div style={{ background: T.surface, borderRadius: 8, padding: "8px 12px", border: "1px solid #e5e7eb" }}>
       <div style={{ fontSize: 10, fontWeight: 600, color: T.dim, textTransform: "uppercase" as const, letterSpacing: "0.04em", marginBottom: 3 }}>{label}</div>
       <div style={{ fontSize: 13, fontWeight: 600, color: T.text, fontFamily: mono ? T.mono : T.font }}>{value}</div>
     </div>
@@ -544,7 +544,7 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
               key={seg}
               onClick={() => setFilter(filter === seg ? "all" : seg)}
               style={{
-                background: filter === seg ? SEGMENT_COLORS[seg] + "20" : "#fff",
+                background: filter === seg ? SEGMENT_COLORS[seg] + "20" : T.surface,
                 border: `1px solid ${filter === seg ? SEGMENT_COLORS[seg] : "#e5e7eb"}`,
                 borderRadius: 10,
                 padding: "14px 12px",
@@ -568,15 +568,15 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
       {/* KPIs */}
       {stats && (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 12, marginBottom: 24 }}>
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
+          <div style={{ background: T.surface, border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700 }}>{stats.totalCustomers}</div>
             <div style={{ fontSize: 11, color: T.dim }}>Total clientes</div>
           </div>
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
+          <div style={{ background: T.surface, border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700 }}>{fmt(stats.totalRevenue)}€</div>
             <div style={{ fontSize: 11, color: T.dim }}>Revenue total</div>
           </div>
-          <div style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
+          <div style={{ background: T.surface, border: "1px solid #e5e7eb", borderRadius: 10, padding: 16, textAlign: "center" }}>
             <div style={{ fontSize: 20, fontWeight: 700 }}>{fmt(stats.avgTicketGlobal)}€</div>
             <div style={{ fontSize: 11, color: T.dim }}>Ticket medio global</div>
           </div>
@@ -597,7 +597,7 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
             style={{
               padding: "6px 14px", borderRadius: 6, fontSize: 12,
               border: `1px solid ${sortBy === s.key ? T.accent : "#e5e7eb"}`,
-              background: sortBy === s.key ? T.accent + "10" : "#fff",
+              background: sortBy === s.key ? T.accent10 : "#fff",
               color: sortBy === s.key ? T.accent : T.dim,
               cursor: "pointer",
             }}
@@ -611,7 +611,7 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
           style={{
             padding: "6px 14px", borderRadius: 6, fontSize: 12,
             border: `1px solid ${onlyWithPass ? "#a16207" : "#e5e7eb"}`,
-            background: onlyWithPass ? "#fef3c7" : "#fff",
+            background: onlyWithPass ? "#fef3c7" : T.surface,
             color: onlyWithPass ? "#92400e" : T.dim,
             cursor: "pointer", fontWeight: onlyWithPass ? 600 : 400,
           }}
@@ -763,7 +763,7 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
                       onClick={() => setAdjustTarget(c)}
                       style={{
                         padding: "4px 8px", borderRadius: 6, fontSize: 11,
-                        border: "1px solid #e5e7eb", background: "#fff", cursor: "pointer",
+                        border: "1px solid #e5e7eb", background: T.surface, cursor: "pointer",
                         color: "#dc2626", fontWeight: 600,
                       }}
                     >

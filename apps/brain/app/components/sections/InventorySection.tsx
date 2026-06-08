@@ -123,7 +123,7 @@ export default function InventorySection({ user, orgId, authedFetch }: Inventory
   const filtered = data.items.filter(i => filter === "all" || i.status === filter);
 
   const statusColor = (s: string) => s === "critical" ? "#dc2626" : s === "low" ? "#ca8a04" : s === "overstock" ? "#2563eb" : "#16a34a";
-  const statusBg = (s: string) => s === "critical" ? "#fef2f2" : s === "low" ? "#fefce8" : s === "overstock" ? "#eff6ff" : "#f0fdf4";
+  const statusBg = (s: string) => s === "critical" ? T.dangerBg : s === "low" ? T.warningBg : s === "overstock" ? T.infoBg : T.successBg;
   const statusLabel = (s: string) => s === "critical" ? "Crítico" : s === "low" ? "Bajo" : s === "overstock" ? "Exceso" : "OK";
 
   return (
@@ -155,7 +155,7 @@ export default function InventorySection({ user, orgId, authedFetch }: Inventory
           <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 12 }}>Top mermas del mes</div>
           <div style={{ display: "flex", gap: 16, flexWrap: "wrap" }}>
             {data.wasteThisMonth.topWasteItems.map((w, i) => (
-              <div key={i} style={{ padding: "8px 14px", background: "#fef2f2", borderRadius: 8, fontSize: 12 }}>
+              <div key={i} style={{ padding: "8px 14px", background: T.dangerBg, borderRadius: 8, fontSize: 12 }}>
                 <div style={{ fontWeight: 500 }}>{w.name}</div>
                 <div style={{ color: "#dc2626", fontWeight: 600, fontFamily: T.mono }}>{fmt(w.costLoss)}€</div>
               </div>
@@ -241,7 +241,7 @@ export default function InventorySection({ user, orgId, authedFetch }: Inventory
                   }}>
                     {mv.type === "entrada" ? "+" : "-"}{mv.qty}
                   </span>
-                  <span style={{ ...badge, fontSize: 10, color: mv.type === "entrada" ? "#16a34a" : mv.type === "merma" ? "#dc2626" : "#ca8a04", background: mv.type === "entrada" ? "#f0fdf4" : mv.type === "merma" ? "#fef2f2" : "#fefce8" }}>
+                  <span style={{ ...badge, fontSize: 10, color: mv.type === "entrada" ? "#16a34a" : mv.type === "merma" ? "#dc2626" : "#ca8a04", background: mv.type === "entrada" ? T.successBg : mv.type === "merma" ? T.dangerBg : T.warningBg }}>
                     {mv.type}
                   </span>
                   <span style={{ color: T.dim, fontSize: 11 }}>{new Date(mv.date).toLocaleDateString("es")}</span>

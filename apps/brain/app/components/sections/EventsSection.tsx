@@ -134,7 +134,7 @@ export default function EventsSection({ user, orgId }: EventsSectionProps) {
             style={{
               padding: "6px 14px", borderRadius: 6, fontSize: 12,
               border: `1px solid ${typeFilter === g.value ? T.accent : "#e5e7eb"}`,
-              background: typeFilter === g.value ? T.accent + "10" : "#fff",
+              background: typeFilter === g.value ? T.accent10 : "#fff",
               color: typeFilter === g.value ? T.accent : T.dim,
               cursor: "pointer",
             }}
@@ -142,7 +142,7 @@ export default function EventsSection({ user, orgId }: EventsSectionProps) {
             {g.label}
           </button>
         ))}
-        <button onClick={fetchEvents} style={{ ...{ padding: "6px 14px", borderRadius: 6, fontSize: 12, border: "1px solid #e5e7eb", background: "#fff", color: T.dim, cursor: "pointer" } }}>
+        <button onClick={fetchEvents} style={{ ...{ padding: "6px 14px", borderRadius: 6, fontSize: 12, border: "1px solid #e5e7eb", background: T.surface, color: T.dim, cursor: "pointer" } }}>
           🔄 Refrescar
         </button>
       </div>
@@ -171,7 +171,7 @@ export default function EventsSection({ user, orgId }: EventsSectionProps) {
               }} />
 
               <div style={{
-                background: "#fff", border: "1px solid #f3f4f6", borderRadius: 8,
+                background: T.surface, border: "1px solid #f3f4f6", borderRadius: 8,
                 padding: "10px 14px",
               }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>

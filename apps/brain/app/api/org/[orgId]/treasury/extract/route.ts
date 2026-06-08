@@ -18,6 +18,7 @@ import {
   normalizeBank,
 } from "@/lib/treasury/account-resolver";
 import type { TreasuryAccount } from "@/lib/treasury/types";
+import { resolveOrgAnthropicKey } from "@/lib/secrets/org-anthropic-key";
 
 type Params = { params: Promise<{ orgId: string }> };
 
@@ -76,9 +77,15 @@ export async function POST(req: Request, { params }: Params) {
     let extraction;
 
     if (sourceFormat === "pdf") {
-      extraction = await extractFromPdf(file);
+      // PDF SIEMPRE necesita IA → resolvemos la clave del café ya (falla rápido
+      // con NO_AI_KEY si el café Enverde aún no la tiene configurada).
+      const aiKey = await resolveOrgAnthropicKey(orgId);
+      extraction = await extractFromPdf(file, aiKey);
     } else {
-      extraction = await extractFromTabular(file, sourceFormat);
+      // CSV se parsea sin IA; XLSX solo usa IA como fallback → clave perezosa.
+      extraction = await extractFromTabular(file, sourceFormat, () =>
+        resolveOrgAnthropicKey(orgId),
+      );
     }
 
     if (!extraction.movements || extraction.movements.length === 0) {
@@ -217,10 +224,10 @@ export async function POST(req: Request, { params }: Params) {
       movements,
     });
   } catch (e: unknown) {
-    const err = e as { status?: number; message?: string };
+    const err = e as { status?: number; message?: string; code?: string };
     console.error("Treasury extract error:", err);
     return NextResponse.json(
-      { error: err.message ?? "Server error" },
+      { error: err.message ?? "Server error", ...(err.code ? { code: err.code } : {}) },
       { status: err.status || 500 }
     );
   }
@@ -228,10 +235,7 @@ export async function POST(req: Request, { params }: Params) {
 
 /* ─── PDF extraction via Claude AI ────────────────────────────── */
 
-async function extractFromPdf(file: File) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw { status: 500, message: "ANTHROPIC_API_KEY no configurada" };
-
+async function extractFromPdf(file: File, apiKey: string) {
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
 
@@ -422,7 +426,11 @@ function repairTruncatedJson(raw: string): { bankName?: string; movements: unkno
 
 /* ─── CSV / XLSX extraction (tabular) ─────────────────────────── */
 
-async function extractFromTabular(file: File, format: "csv" | "xlsx") {
+async function extractFromTabular(
+  file: File,
+  format: "csv" | "xlsx",
+  getAiKey: () => Promise<string>,
+) {
   const text = await file.text();
 
   if (format === "csv") {
@@ -435,8 +443,8 @@ async function extractFromTabular(file: File, format: "csv" | "xlsx") {
   try {
     return parseCSVMovements(text);
   } catch {
-    // Fallback: send the raw text to Claude for extraction
-    return await extractTabularWithAI(text);
+    // Fallback IA: resolvemos la clave del café SOLO aquí, cuando se usa de verdad.
+    return await extractTabularWithAI(text, await getAiKey());
   }
 }
 
@@ -618,10 +626,7 @@ function normalizeDate(str: string): string {
 }
 
 /** Fallback: use Claude AI to extract movements from raw text */
-async function extractTabularWithAI(text: string) {
-  const apiKey = process.env.ANTHROPIC_API_KEY;
-  if (!apiKey) throw { status: 500, message: "ANTHROPIC_API_KEY no configurada" };
-
+async function extractTabularWithAI(text: string, apiKey: string) {
   // Truncate to avoid token limits
   const truncated = text.slice(0, 30000);
 

@@ -54,6 +54,16 @@ function getAdminApp(): App {
 function getDb(): Firestore {
   if (_firestore) return _firestore;
   _firestore = getFirestore(getAdminApp());
+  // Robustez: ignora campos `undefined` en las escrituras (p.ej. `last4`
+  // cuando el extracto no trae nº de cuenta) en vez de reventar con
+  // "Cannot use undefined as a Firestore value". settings() solo admite
+  // una llamada y antes del primer uso; el cache _firestore garantiza que
+  // esto corre exactamente una vez. El try/catch cubre el re-entry de HMR.
+  try {
+    _firestore.settings({ ignoreUndefinedProperties: true });
+  } catch {
+    // Firestore ya estaba configurado/usado (HMR de Turbopack): ok.
+  }
   return _firestore;
 }
 

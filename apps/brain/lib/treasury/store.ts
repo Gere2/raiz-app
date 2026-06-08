@@ -16,7 +16,7 @@ import type {
   TreasuryRule,
 } from "./types";
 import type { AggregatorAccrual } from "./monthly-aggregator";
-import { SEED_RULES } from "./seed-rules";
+import { GENERIC_SEED_RULES, OWNER_SEED_RULES } from "./seed-rules";
 import { SEED_ACCOUNTS, DEFAULT_ASSUMPTIONS } from "./seed-accounts";
 
 const adminDb = db as Firestore;
@@ -48,9 +48,17 @@ export type SeedRulesResult = {
   skipped: string[];
 };
 
-export async function seedRules(orgId: string): Promise<SeedRulesResult> {
+export async function seedRules(
+  orgId: string,
+  opts: { includeOwnerRules?: boolean } = {}
+): Promise<SeedRulesResult> {
   const result: SeedRulesResult = { created: [], updated: [], skipped: [] };
-  for (const rule of SEED_RULES) {
+  // Por defecto solo reglas genéricas: nunca contaminamos un café cliente con
+  // proveedores/tarjetas de la casa. El set completo es opt-in (org canónica).
+  const rules = opts.includeOwnerRules
+    ? [...GENERIC_SEED_RULES, ...OWNER_SEED_RULES]
+    : GENERIC_SEED_RULES;
+  for (const rule of rules) {
     const ref = rulesCol(orgId).doc(rule.id);
     const existing = await ref.get();
     if (!existing.exists) {
@@ -224,7 +232,14 @@ export async function deleteAccrual(orgId: string, accrualId: string): Promise<v
 /* ─── Bootstrap (seed everything) ────────────────────────────── */
 
 export async function bootstrapTreasury(orgId: string) {
-  const rules = await seedRules(orgId);
+  // Las reglas de la casa (proveedores y tarjetas de Raíz y Grano) NO se siembran
+  // en cafés cliente: contaminarían su clasificación (p. ej. una tarjeta ajena
+  // acabada en 9415 entraría como "tarjeta pendiente"). Solo la org canónica
+  // —la que NO proviene del funnel enverde (source !== "enverde")— recibe el set
+  // completo; los cafés enverde reciben únicamente las reglas genéricas.
+  const orgSnap = await adminDb.collection("orgs").doc(orgId).get();
+  const isEnverdeCustomer = orgSnap.data()?.source === "enverde";
+  const rules = await seedRules(orgId, { includeOwnerRules: !isEnverdeCustomer });
   const accounts = await seedAccounts(orgId);
   const assumptions = await ensureDefaultAssumptions(orgId);
   return { rules, accounts, assumptions };

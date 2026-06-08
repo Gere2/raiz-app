@@ -1,17 +1,16 @@
 import "./globals.css";
 import { headers } from "next/headers";
 import type { Metadata } from "next";
+import { isEnverdeHost } from "./components/brand";
+import { BrandProvider } from "./components/brand-context";
 
 // El brain sirve DOS marcas: Raíz y Grano (single-tenant original) y Enverde
-// (CFO multi-tenant para cafeterías, dominio app.enverde.app). El título de la
-// pestaña debe seguir al host: si no, un café que llega por enverde.app lee
-// "Brain — Raíz y Grano" en la pantalla de su primer servicio. Default = Raíz
-// (cualquier host no-enverde), así que Raíz no se ve afectada.
-const ENVERDE_HOSTS = new Set(["app.enverde.app", "www.enverde.app"]);
-
+// (CFO multi-tenant para cafeterías, dominio app.enverde.app). Tanto el título
+// de la pestaña como el chrome (login, sidebar) siguen al host: un café que
+// llega por enverde.app no debe leer "Raíz y Grano / Brain" en su primer
+// servicio. Default = Raíz (cualquier host no-enverde), intacta.
 export async function generateMetadata(): Promise<Metadata> {
-  const host = (await headers()).get("host")?.toLowerCase().split(":")[0] ?? "";
-  if (ENVERDE_HOSTS.has(host)) {
+  if (isEnverdeHost((await headers()).get("host"))) {
     return {
       title: "Enverde · Tu CFO",
       description:
@@ -24,17 +23,20 @@ export async function generateMetadata(): Promise<Metadata> {
   };
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  const host = (await headers()).get("host");
   return (
-    <html lang="es">
+    <html lang="es" data-brand={isEnverdeHost(host) ? "enverde" : "raiz"}>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
-      <body className="antialiased">{children}</body>
+      <body className="antialiased">
+        <BrandProvider host={host}>{children}</BrandProvider>
+      </body>
     </html>
   );
 }
