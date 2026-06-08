@@ -49,9 +49,22 @@ export async function POST(req: Request) {
     const userRef = db.collection("users").doc(uid);
 
     await db.runTransaction(async (tx) => {
+      // Todas las lecturas ANTES de cualquier escritura (regla de transacciones Firestore).
       const userSnap = await tx.get(userRef);
+      const orgSnap = await tx.get(orgRef);
+      const memberSnap = await tx.get(memberRef);
       const user = userSnap.exists ? (userSnap.data() || {}) : {};
       const prev = Array.isArray(user.orgIds) ? user.orgIds : [];
+
+      // SEGURIDAD (P0): nadie puede auto-añadirse a una org que YA existe y de la
+      // que NO es miembro. Solo se permite crear una org nueva, o reentrar como
+      // miembro ya existente. Bloquea, p. ej., POST { orgId: "raiz_y_grano" }.
+      if (orgSnap.exists && !memberSnap.exists) {
+        throw Object.assign(
+          new Error("No puedes unirte a una organización existente"),
+          { status: 403 },
+        );
+      }
 
       // Rate limiting: max 3 orgs per user
       if (prev.length >= 3) {
