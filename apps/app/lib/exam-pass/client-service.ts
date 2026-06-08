@@ -1,4 +1,5 @@
 "use client"
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 
 /**
  * Bono Supervivencia Exámenes — service cliente.
@@ -19,7 +20,7 @@ import type {
   ExamPassRedemption,
 } from "./types"
 
-const DEFAULT_ORG = "raiz_y_grano"
+const DEFAULT_ORG = RAIZ_ORG_ID
 
 // ── Result + Error types ──────────────────────────────────────────
 

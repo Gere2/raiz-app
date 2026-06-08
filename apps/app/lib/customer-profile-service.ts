@@ -1,3 +1,4 @@
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 /**
  * customer-profile-service.ts
  * 
@@ -126,7 +127,7 @@ export async function updateCustomerProfile(order: {
       const segment = calculateSegment(newTotalVisits, daysSinceLastVisit)
 
       await setDoc(docRef, {
-        orgId: data.orgId || "raiz_y_grano",
+        orgId: data.orgId || RAIZ_ORG_ID,
         totalVisits: increment(1),
         totalSpent: increment(order.total),
         avgTicket: newAvgTicket,
@@ -147,7 +148,7 @@ export async function updateCustomerProfile(order: {
     } else {
       await setDoc(docRef, {
         id: profileId,
-        orgId: "raiz_y_grano",
+        orgId: RAIZ_ORG_ID,
         type: order.source === "APP" ? "app" : "pos_anonymous",
         uid: order.customerUid,
         email: order.customerEmail || null,
@@ -196,7 +197,7 @@ export async function getCustomerProfile(uid: string): Promise<CustomerProfile |
   } catch { return null }
 }
 
-export async function getAllProfiles(orgId: string = "raiz_y_grano"): Promise<CustomerProfile[]> {
+export async function getAllProfiles(orgId: string = RAIZ_ORG_ID): Promise<CustomerProfile[]> {
   if (!db) return []
   try {
     // Note: This query requires a composite index on customer_profiles:
@@ -212,7 +213,7 @@ export async function getAllProfiles(orgId: string = "raiz_y_grano"): Promise<Cu
   } catch { return [] }
 }
 
-export async function getProfilesBySegment(segment: string, orgId: string = "raiz_y_grano"): Promise<CustomerProfile[]> {
+export async function getProfilesBySegment(segment: string, orgId: string = RAIZ_ORG_ID): Promise<CustomerProfile[]> {
   if (!db) return []
   try {
     const q = query(

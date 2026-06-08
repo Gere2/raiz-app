@@ -1,4 +1,5 @@
 "use client";
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 
 import { useState, useEffect, Suspense, useRef } from "react";
 import { useRouter } from "next/navigation";
@@ -435,7 +436,7 @@ function PaymentForm({
         await addDoc(collection(db, "orders"), {
           ...enrichData,
           source: "APP",
-          orgId: "raiz_y_grano", // single-tenant: el dashboard/margins del brain filtra por orgId
+          orgId: RAIZ_ORG_ID, // single-tenant: el dashboard/margins del brain filtra por orgId
           customerUid: user.uid,
           customerName: user.displayName || user.email || "Customer",
           customerEmail: user.email || "",

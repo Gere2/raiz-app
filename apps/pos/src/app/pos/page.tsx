@@ -378,10 +378,10 @@ export default function POSPageFullscreen() {
           {/* Brand */}
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/12 flex items-center justify-center">
-              <span className="text-lg">☕</span>
+              <span className="text-lg">{isRaiz ? "☕" : "🌱"}</span>
             </div>
             <div>
-              <span className="font-bold text-base tracking-wide">Raíz y Grano</span>
+              <span className="font-bold text-base tracking-wide">{isRaiz ? "Raíz y Grano" : "Enverde"}</span>
               <span className="text-[10px] block text-white/50 font-medium -mt-0.5 tracking-widest uppercase">Punto de Venta</span>
             </div>
             {peakMode && (

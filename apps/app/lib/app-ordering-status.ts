@@ -1,4 +1,5 @@
 "use client";
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 
 /**
  * app-ordering-status.ts
@@ -20,7 +21,7 @@ import { doc, getDoc, onSnapshot } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 
 // La app es single-tenant (Raíz y Grano), igual que order-service.
-export const APP_ORDERING_ORG_ID = "raiz_y_grano";
+export const APP_ORDERING_ORG_ID = RAIZ_ORG_ID;
 
 export interface DayHours {
   closed: boolean;

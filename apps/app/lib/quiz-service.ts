@@ -1,3 +1,4 @@
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 /**
  * quiz-service.ts
  *
@@ -1181,7 +1182,7 @@ export const MAX_WEEKLY_QUIZ_POINTS = 300
 
 // ── Dynamic quiz catalog (Firestore → fallback to hardcoded) ──
 
-const DEFAULT_ORG_ID = "raiz_y_grano"
+const DEFAULT_ORG_ID = RAIZ_ORG_ID
 
 /** Cache for dynamic quizzes */
 let _quizCache: Quiz[] | null = null

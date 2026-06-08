@@ -1,3 +1,4 @@
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 /**
  * rewards-service.ts
  *
@@ -152,7 +153,7 @@ export interface Redemption {
 
 // ── Catálogo dinámico — lee de Firestore con fallback ──
 
-const DEFAULT_ORG_ID = "raiz_y_grano"
+const DEFAULT_ORG_ID = RAIZ_ORG_ID
 
 /** Cache para rewards dinámicos */
 let _rewardsCache: Reward[] | null = null

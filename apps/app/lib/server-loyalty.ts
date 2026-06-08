@@ -1,3 +1,4 @@
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 /**
  * server-loyalty.ts (APP)
  *
@@ -23,7 +24,7 @@ export function useServerLoyalty(): boolean {
 
 // ── Config ──
 
-const ORG_ID = "raiz_y_grano"
+const ORG_ID = RAIZ_ORG_ID
 
 function getBrainBaseUrl(): string {
   return process.env.NEXT_PUBLIC_BRAIN_API_URL || "/api"

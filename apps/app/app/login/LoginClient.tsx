@@ -1,4 +1,5 @@
 "use client";
+import { RAIZ_ORG_ID } from "@/lib/tenant";
 import { useEffect, useState } from "react";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile, sendPasswordResetEmail } from "firebase/auth";
 import type { FirebaseError } from "firebase/app";
@@ -75,7 +76,7 @@ export default function LoginClient() {
           await setDoc(doc(db, "customer_profiles", cred.user.uid), {
             id: cred.user.uid,
             uid: cred.user.uid,
-            orgId: "raiz_y_grano",
+            orgId: RAIZ_ORG_ID,
             type: "app",
             userType: userType,
             email: email.trim(),
