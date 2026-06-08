@@ -158,7 +158,7 @@ export default function TreasuryStartPage() {
       <Centered>
         <p className="text-lg font-medium">Tu sesión no está activa.</p>
         <a href="https://enverde.app/activar" className="mt-2 text-sm underline">
-          Vuelve a activar tu CFO
+          Vuelve a activar Enverde
         </a>
       </Centered>
     );
@@ -204,7 +204,7 @@ export default function TreasuryStartPage() {
     return (
       <main className="mx-auto max-w-2xl px-5 py-10">
         <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t-accent)" }}>
-          Tu CFO · {month}
+          Diagnóstico de rentabilidad · {month}
         </p>
         <h1 className="mt-2 text-2xl font-black">Esto es lo que dice tu mes</h1>
 
@@ -213,7 +213,7 @@ export default function TreasuryStartPage() {
           style={{ background: ACCENT }}
         >
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
-            Cuánto puedes cobrar
+            Tu sueldo recomendado
           </p>
           <p className="mt-2 text-lg leading-relaxed">{summary.sueldoGeremi}</p>
         </section>
@@ -225,7 +225,13 @@ export default function TreasuryStartPage() {
         <Block title="Qué preocupa" body={summary.quePreocupa} />
         <Block title="Qué decisión tomar" body={summary.queDecision} />
 
-        <div className="mt-8 flex flex-wrap gap-3">
+        <p className="mt-8 text-xs leading-relaxed" style={{ color: "var(--t-dim)" }}>
+          Esto sale de tu banco. Pronto Enverde sumará tus ventas (TPV) y tus costes
+          (escandallos) para afinar tu sueldo al céntimo: ventas + margen + caja = lo que
+          de verdad puedes cobrarte.
+        </p>
+
+        <div className="mt-6 flex flex-wrap gap-3">
           <a
             href={`/org/${orgId}/treasury/start`}
             onClick={(e) => {
@@ -249,12 +255,16 @@ export default function TreasuryStartPage() {
   return (
     <main className="mx-auto flex min-h-screen max-w-xl flex-col justify-center px-5 py-10">
       <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: "var(--t-accent)" }}>
-        enverde · tu CFO
+        enverde · tu rentabilidad
       </p>
-      <h1 className="mt-2 text-2xl font-black">Sube el extracto de tu banco</h1>
+      <h1 className="mt-2 text-2xl font-black">¿Tu negocio te paga a ti?</h1>
       <p className="mt-2" style={{ color: "var(--t-muted)" }}>
-        PDF, CSV o XLSX. Te decimos cuánto puedes cobrar este mes, con semáforo y qué
-        te falta para llegar a verde. Tarda unos segundos.
+        Enverde cruza tus ventas, tus costes y tu banco para decirte cuánto puedes
+        cobrarte sin arriesgar la caja. Empezamos por tu banco: sube el extracto
+        (PDF, CSV o XLSX) y te damos tu primer diagnóstico en segundos.
+      </p>
+      <p className="mt-3 text-sm font-semibold" style={{ color: "var(--t-accent)" }}>
+        No solo vendas. Entiende cuánto te queda.
       </p>
 
       <input
@@ -286,7 +296,7 @@ export default function TreasuryStartPage() {
         <p className="mt-3 text-sm" style={{ color: "var(--t-muted)" }}>
           {phase === "extracting"
             ? "Extrayendo y clasificando tus movimientos…"
-            : "Tu CFO está leyendo el mes…"}
+            : "Enverde está leyendo tu mes…"}
         </p>
       )}
 
@@ -319,7 +329,8 @@ export default function TreasuryStartPage() {
       )}
 
       <p className="mt-6 text-xs" style={{ color: "var(--t-dim)" }}>
-        Tus movimientos se usan solo para calcular tu sueldo y tu semáforo.
+        Tus movimientos solo se usan para calcular tu sueldo y tu semáforo. Tus datos
+        son privados y no los vendemos.
       </p>
     </main>
   );

@@ -27,6 +27,8 @@ export type BrainBrand = {
   sidebarTitle: string;
   /** Subtítulo del login. */
   loginSub: string;
+  /** Eslogan de marca (tesis de producto). */
+  tagline: string;
   /** Texto del spinner de carga. */
   loadingLabel: string;
   /** Título del chrome en páginas sueltas (p. ej. /escandallo). */
@@ -38,7 +40,8 @@ const ENVERDE: BrainBrand = {
   name: "Enverde",
   emoji: "🌱",
   sidebarTitle: "Enverde",
-  loginSub: "Tu CFO — Centro de control",
+  loginSub: "Tu sistema de rentabilidad",
+  tagline: "No solo vendas. Entiende cuánto te queda.",
   loadingLabel: "Cargando Enverde...",
   chromeTitle: "Enverde",
 };
@@ -49,6 +52,7 @@ const RAIZ: BrainBrand = {
   emoji: "☕",
   sidebarTitle: "Brain",
   loginSub: "Brain — Centro de operaciones",
+  tagline: "Centro de operaciones de Raíz y Grano.",
   loadingLabel: "Cargando Brain...",
   chromeTitle: "Raíz y Grano · Brain",
 };

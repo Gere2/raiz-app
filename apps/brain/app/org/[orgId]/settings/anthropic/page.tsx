@@ -103,7 +103,7 @@ export default function AnthropicKeyPage() {
       <Centered>
         <p className="text-lg font-medium">Tu sesión no está activa.</p>
         <a href="https://enverde.app/activar" className="mt-2 text-sm underline">
-          Vuelve a activar tu CFO
+          Vuelve a activar Enverde
         </a>
       </Centered>
     );
@@ -116,7 +116,7 @@ export default function AnthropicKeyPage() {
       </p>
       <h1 className="mt-2 text-2xl font-black">Tu clave de IA (Anthropic)</h1>
       <p className="mt-2 text-gray-600">
-        Tu CFO usa esta clave para leer tu extracto y calcular tu sueldo. Es tuya: pagas tu propio
+        Enverde usa esta clave para leer tu banco y calcular tu sueldo. Es tuya: pagas tu propio
         consumo y tus datos van con tu cuenta. La guardamos cifrada y no volvemos a mostrarla.
       </p>
 
@@ -152,7 +152,7 @@ export default function AnthropicKeyPage() {
         {busy ? "Guardando…" : "Guardar clave"}
       </button>
 
-      {saved && <p className="mt-3 text-sm font-medium" style={{ color: ACCENT }}>Guardada. Ya puedes analizar tu extracto.</p>}
+      {saved && <p className="mt-3 text-sm font-medium" style={{ color: ACCENT }}>Guardada. Ya puedes seguir con tu diagnóstico.</p>}
       {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
