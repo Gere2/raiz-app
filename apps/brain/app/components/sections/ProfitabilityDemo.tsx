@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, type ReactNode, type CSSProperties } 
 import { T, tableWrap, btnPrimary, fmt } from "../theme";
 import type { User } from "firebase/auth";
 import { trackActivation } from "@/lib/track-activation";
+import PilotFeedback from "./PilotFeedback";
 
 /**
  * Cafetería demo (solo lectura) — "momento wow" para orgs vacías en el hub
@@ -195,6 +196,9 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
           Empezar con mis datos: subir extracto
         </a>
       </div>
+
+      {/* Feedback del piloto: el usuario acaba de ver la demo */}
+      <PilotFeedback user={user} orgId={orgId} surface="demo" />
     </section>
   );
 }

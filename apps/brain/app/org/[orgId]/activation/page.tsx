@@ -25,6 +25,15 @@ type Summary = {
   totalEvents: number;
 };
 
+type FeedbackItem = { choice: string | null; message: string | null; surface: string | null; timestamp: string | null };
+
+const CHOICE_LABELS: Record<string, string> = {
+  lo_entiendo: "Lo entiendo",
+  me_interesa: "Me interesa",
+  no_se_que_hacer: "No sé qué hacer",
+  quiero_ayuda: "Quiere ayuda",
+};
+
 const TYPE_LABELS: Record<string, string> = {
   demo_opened: "Demo abierta",
   demo_closed: "Demo cerrada",
@@ -61,6 +70,7 @@ export default function ActivationPage() {
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
   const [data, setData] = useState<Summary | null>(null);
+  const [feedback, setFeedback] = useState<FeedbackItem[]>([]);
   const [error, setError] = useState(false);
   const [loading, setLoading] = useState(true);
 
@@ -74,9 +84,17 @@ export default function ActivationPage() {
 
   const load = useCallback(async (u: User) => {
     try {
-      const r = await authedFetch(u, `/api/org/${orgId}/activation-summary`);
+      const [r, rf] = await Promise.all([
+        authedFetch(u, `/api/org/${orgId}/activation-summary`),
+        authedFetch(u, `/api/org/${orgId}/feedback`),
+      ]);
       if (r.ok) setData(await r.json());
       else setError(true);
+      // feedback es best-effort: si falla, el dashboard sigue
+      if (rf.ok) {
+        const fd = await rf.json();
+        setFeedback(Array.isArray(fd?.feedback) ? fd.feedback : []);
+      }
     } catch (e) {
       console.error("Activation summary:", e);
       setError(true);
@@ -122,6 +140,72 @@ export default function ActivationPage() {
         <p className="mt-8 text-sm" style={{ color: "var(--t-muted)" }}>
           No se pudieron cargar las señales. Recarga la página o vuelve más tarde.
         </p>
+      )}
+
+      {/* Checklist de seguimiento del piloto: derivado SOLO del uso real
+           (totals de activación + feedback). Read-only, nada que rellenar. */}
+      {data && (
+        <Section title="Checklist del piloto">
+          <p className="mt-1 text-xs" style={{ color: "var(--t-dim)" }}>
+            Se marca solo con el uso real de esta org. Nada que rellenar a mano.
+          </p>
+          <ul className="mt-4 space-y-2">
+            {[
+              { label: "Alta hecha (la org existe)", done: true },
+              { label: "Resumen de rentabilidad visto", done: (data.totals.profitability_summary_seen ?? 0) > 0 },
+              { label: "Cafetería demo abierta", done: (data.totals.demo_opened ?? 0) > 0 },
+              { label: "CTA de subir extracto clicado", done: (data.totals.cta_upload_statement_clicked ?? 0) > 0 },
+              { label: "Ruta guiada usada", done: (data.totals.onboarding_step_clicked ?? 0) > 0 },
+              { label: "Feedback recibido", done: feedback.length > 0 },
+            ].map((item) => (
+              <li key={item.label} className="flex items-center gap-2.5 text-sm">
+                <span
+                  aria-hidden
+                  className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-bold"
+                  style={
+                    item.done
+                      ? { background: "var(--t-accent)", color: "#fff" }
+                      : { border: "1.5px solid var(--t-border)", color: "var(--t-dim)" }
+                  }
+                >
+                  {item.done ? "✓" : ""}
+                </span>
+                <span style={{ color: item.done ? "var(--t-text)" : "var(--t-muted)" }}>{item.label}</span>
+              </li>
+            ))}
+          </ul>
+        </Section>
+      )}
+
+      {/* Feedback reciente del piloto */}
+      {data && (
+        <Section title="Feedback reciente">
+          {feedback.length === 0 ? (
+            <p className="mt-3 text-sm" style={{ color: "var(--t-muted)" }}>
+              Aún sin feedback. Aparecerá cuando el café responda tras la demo o la ruta guiada.
+            </p>
+          ) : (
+            <ul className="mt-4 space-y-3">
+              {feedback.map((f, i) => (
+                <li key={i} className="rounded-xl border p-3" style={{ borderColor: "var(--t-border)", background: "var(--t-bg)" }}>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="rounded-full px-2 py-0.5 text-[11px] font-bold" style={{ background: "var(--t-accent)", color: "#fff" }}>
+                      {CHOICE_LABELS[f.choice ?? ""] ?? f.choice ?? "—"}
+                    </span>
+                    <span className="text-[11px]" style={{ color: "var(--t-dim)" }}>
+                      {f.surface ?? "—"} · {f.timestamp ? new Date(f.timestamp).toLocaleString("es-ES", { dateStyle: "short", timeStyle: "short" }) : "—"}
+                    </span>
+                  </div>
+                  {f.message && (
+                    <p className="mt-1.5 text-sm leading-relaxed" style={{ color: "var(--t-text)" }}>
+                      {f.message}
+                    </p>
+                  )}
+                </li>
+              ))}
+            </ul>
+          )}
+        </Section>
       )}
 
       {data && data.totalEvents === 0 && (

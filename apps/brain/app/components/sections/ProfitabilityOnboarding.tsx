@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
 import { trackActivation } from "@/lib/track-activation";
+import PilotFeedback from "./PilotFeedback";
 
 /**
  * "Tu ruta para calcular la rentabilidad" — onboarding guiado del hub
@@ -171,6 +172,9 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
           );
         })}
       </ol>
+
+      {/* Feedback del piloto: solo cuando ya avanzó al menos un paso */}
+      {steps.some((st) => st.done) && <PilotFeedback user={user} orgId={orgId} surface="onboarding" />}
     </section>
   );
 }
