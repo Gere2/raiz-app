@@ -129,7 +129,9 @@ export async function POST(req: Request) {
     /* ─── 3) Custom token raizygrano para el bridge de identidad ─ */
     const customToken = await adminAuth.createCustomToken(uid, { enverde: true, orgId });
 
-    const next = `/org/${orgId}/treasury/start`;
+    // Aterriza en el hub de rentabilidad (Fase 2.1), no en la pantalla suelta de
+    // banco. El hub enlaza a /org/{orgId}/treasury/start (Caja y sueldo).
+    const next = `/org/${orgId}`;
     const loginUrl =
       `/enverde-login?token=${encodeURIComponent(customToken)}` +
       `&org=${encodeURIComponent(orgId)}&next=${encodeURIComponent(next)}`;
