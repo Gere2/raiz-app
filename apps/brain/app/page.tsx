@@ -68,6 +68,36 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
              // invoice-matcher.ts. Ver PLAN.md sección "Backlog técnico".
 ]);
 
+/**
+ * Deep-linking por ?section= (Fase 2.2b). Validado por marca: un café Enverde
+ * solo puede abrir secciones de rentabilidad; cualquier otra (incluso forzada
+ * por URL, p. ej. ?section=suppliers) cae a "home". Para Enverde "Caja" es la
+ * ruta /org/[orgId]/treasury/start (NO la sección admin `treasury`), así que
+ * `treasury` NO está en la allowlist Enverde. `margins` se añadirá en Fase 2.3.
+ */
+const ENVERDE_ALLOWED_SECTIONS = new Set<string>(["home", "products", "recipes", "config"]);
+
+/**
+ * Raíz: todas las secciones navegables actuales (se excluyen las sub-vistas que
+ * requieren selección previa — detail/skuDetail/supplierDetail/packaging — para
+ * no aterrizar en una vista de detalle vacía).
+ */
+const ALL_KNOWN_SECTIONS = new Set<string>([
+  "home", "products", "recipes", "catalog", "inventory", "invoices", "staging",
+  "skus", "suppliers", "config", "customers", "rewards", "events", "quizzes",
+  "missions", "margins", "inventoryBrain", "seasonal", "posLink", "treasury",
+  "combos", "reports",
+]);
+
+/** Resuelve ?section= a una sección permitida para la marca, o "home". */
+function resolveSectionForBrand(raw: string | null, brandKey: string): Section {
+  if (!raw) return "home";
+  if (brandKey === "enverde") {
+    return ENVERDE_ALLOWED_SECTIONS.has(raw) ? (raw as Section) : "home";
+  }
+  return ALL_KNOWN_SECTIONS.has(raw) ? (raw as Section) : "home";
+}
+
 /* ═══════════════════════════════════════════════════════════════ */
 export default function BrainApp() {
   const [user, setUser] = useState<User | null>(null);
@@ -147,6 +177,14 @@ export default function BrainApp() {
 
   /* Refetch all data when org changes */
   useEffect(() => { if (user && orgId) { fetchProducts(); fetchRecipes(); fetchCatalog(); fetchSkus(); fetchDashboard(); } }, [user, orgId, fetchProducts, fetchRecipes, fetchCatalog, fetchSkus, fetchDashboard]);
+
+  /* Deep-linking validado por marca (Fase 2.2b): ?section=... → sección permitida
+   * o "home". Se lee tras montar (cliente) para no romper SSR/hidratación. Los
+   * datos ya los carga el effect de arriba cuando orgId resuelve. */
+  useEffect(() => {
+    const raw = new URLSearchParams(window.location.search).get("section");
+    setSection(resolveSectionForBrand(raw, brand.key));
+  }, [brand.key]);
 
   /* ── Maps ── */
   const recipeByProduct: Record<string, Recipe> = {};
