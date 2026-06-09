@@ -85,21 +85,30 @@ export default function OrgHubPage() {
 
       {/* ─── Tarjetas secundarias · próximos pasos (honestas) ─── */}
       <div className="mt-5 grid gap-4 sm:grid-cols-2">
+        <ActionCard
+          href="/?section=products"
+          state="Disponible"
+          title="Productos"
+          body="Ordena tu carta y prepara el cálculo de márgenes por producto."
+          cta="Añadir productos"
+        />
+        <ActionCard
+          href="/?section=recipes"
+          state="Disponible"
+          title="Escandallos"
+          body="Añade costes aproximados para entender qué margen deja cada producto."
+          cta="Preparar escandallos"
+        />
+        <NextStepCard
+          title="Márgenes"
+          body="Descubre qué productos realmente pagan tu sueldo y cuáles solo te dan trabajo."
+          state="Próximamente"
+        />
         <NextStepCard
           title="Ventas"
           body="Registra lo que vendes para saber qué productos mueven tu negocio."
           state="Próximo paso"
           note="Pronto podrás conectar tus ventas"
-        />
-        <NextStepCard
-          title="Productos"
-          body="Ordena tu carta y prepara el cálculo de márgenes por producto."
-          state="Próximo paso"
-        />
-        <NextStepCard
-          title="Márgenes"
-          body="Descubre qué productos realmente pagan tu sueldo y cuáles solo te dan trabajo."
-          state="Próximo paso"
         />
         <NextStepCard
           title="Acciones para mejorar"
@@ -154,6 +163,36 @@ function NextStepCard({
         </p>
       )}
     </div>
+  );
+}
+
+function ActionCard({
+  href,
+  state,
+  title,
+  body,
+  cta,
+}: {
+  href: string;
+  state: string;
+  title: string;
+  body: string;
+  cta: string;
+}) {
+  return (
+    <a href={href} className="block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
+      <Badge tone="now">{state}</Badge>
+      <h3 className="mt-3 text-base font-bold" style={{ color: "var(--t-text)" }}>
+        {title}
+      </h3>
+      <p className="mt-1 text-sm leading-relaxed" style={{ color: "var(--t-muted)" }}>
+        {body}
+      </p>
+      <span className="mt-3 inline-flex items-center gap-1.5 text-sm font-bold" style={{ color: ACCENT }}>
+        {cta}
+        <span aria-hidden>→</span>
+      </span>
+    </a>
   );
 }
 
