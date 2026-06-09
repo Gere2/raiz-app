@@ -99,10 +99,12 @@ export default function OrgHubPage() {
           body="Añade costes aproximados para entender qué margen deja cada producto."
           cta="Preparar escandallos"
         />
-        <NextStepCard
+        <ActionCard
+          href="/?section=margins"
+          state="Disponible"
           title="Márgenes"
           body="Descubre qué productos realmente pagan tu sueldo y cuáles solo te dan trabajo."
-          state="Próximamente"
+          cta="Ver márgenes"
         />
         <NextStepCard
           title="Ventas"

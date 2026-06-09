@@ -73,9 +73,10 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
  * solo puede abrir secciones de rentabilidad; cualquier otra (incluso forzada
  * por URL, p. ej. ?section=suppliers) cae a "home". Para Enverde "Caja" es la
  * ruta /org/[orgId]/treasury/start (NO la sección admin `treasury`), así que
- * `treasury` NO está en la allowlist Enverde. `margins` se añadirá en Fase 2.3.
+ * `treasury` NO está en la allowlist Enverde. `margins` se habilita en Fase 2.3
+ * (Márgenes por escandallo; empty state honesto si aún no hay ventas/costes).
  */
-const ENVERDE_ALLOWED_SECTIONS = new Set<string>(["home", "products", "recipes", "config"]);
+const ENVERDE_ALLOWED_SECTIONS = new Set<string>(["home", "products", "recipes", "margins", "config"]);
 
 /**
  * Raíz: todas las secciones navegables actuales (se excluyen las sub-vistas que
@@ -339,6 +340,7 @@ export default function BrainApp() {
             <NavBtn label="Caja y sueldo" icon="◈" active={false} onClick={() => { window.location.href = orgId ? `/org/${orgId}/treasury/start` : "/"; }} open={sideOpen} />
             <NavBtn label="Productos" icon="▨" active={section === "products"} onClick={() => { setSection("products"); fetchProducts(); }} badge={String(products.length)} open={sideOpen} />
             <NavBtn label="Escandallos" icon="▤" active={section === "recipes" || section === "detail"} onClick={() => { if (section === "detail") goBack(); else setSection("recipes"); }} badge={String(recipes.length)} open={sideOpen} />
+            <NavBtn label="Márgenes" icon="◧" active={section === "margins"} onClick={() => setSection("margins")} open={sideOpen} />
             <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
           </>
         )}

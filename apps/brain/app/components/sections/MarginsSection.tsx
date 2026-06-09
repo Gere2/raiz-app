@@ -67,7 +67,10 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
   useEffect(() => { fetchData(); }, [fetchData]);
 
   if (loading && !data) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Cargando análisis de márgenes...</div>;
-  if (!data) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Sin datos disponibles.</div>;
+  // Empty state honesto: o la API no devolvió datos, o aún no hay productos con
+  // ventas/costes. En vez de un dashboard en ceros (o "Sin datos"), guiamos al
+  // dueño a lo que falta para poder calcular márgenes.
+  if (!data || data.items.length === 0) return <MarginsEmptyState />;
 
   const sorted = [...data.items]
     .filter(i => catFilter === "all" || i.category === catFilter)
@@ -249,6 +252,37 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
           </table>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ─── Empty state honesto (sin ventas/costes todavía) ──────────────────────
+ * Habla como dueño, no como técnico: nada de arrays vacíos, tickets sin orgId
+ * ni dashboards en ceros. Guía a Productos y Escandallos, que es lo que falta
+ * para que Enverde pueda calcular qué producto paga el sueldo. */
+function MarginsEmptyState() {
+  return (
+    <div style={page}>
+      <h1 style={pageTitle}>Márgenes</h1>
+      <p style={pageSub}>Qué productos pagan tu sueldo y cuáles solo te dan trabajo</p>
+      <div style={{ ...tableWrap, maxWidth: 560, margin: "24px auto 0", padding: 40, textAlign: "center" }}>
+        <div style={{ fontSize: 18, fontWeight: 700, color: T.text, marginBottom: 12 }}>
+          Aún no podemos calcular tus márgenes
+        </div>
+        <p style={{ fontSize: 14, lineHeight: 1.6, color: T.muted, marginBottom: 24 }}>
+          Para saber qué productos pagan tu sueldo necesitamos ventas y costes por
+          producto. Empieza añadiendo productos y escandallos. Después, cuando registres
+          ventas, Enverde podrá decirte qué deja margen y qué solo te da trabajo.
+        </p>
+        <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
+          <button onClick={() => { window.location.href = "/?section=products"; }} style={{ ...btnPrimary, cursor: "pointer" }}>
+            Añadir productos
+          </button>
+          <button onClick={() => { window.location.href = "/?section=recipes"; }} style={{ ...btnSmall, cursor: "pointer", color: T.accent, borderColor: T.accent40 }}>
+            Preparar escandallos
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
