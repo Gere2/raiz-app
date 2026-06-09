@@ -18,11 +18,10 @@ import { authedFetch } from "@/lib/authed-fetch";
 
 const ACCENT = "#3F6B2E";
 
-// Handoff al TPV (pos.raizygrano.com) oculto a propósito: en el primer-uso no
-// exponemos una tercera marca (coherencia "todo Enverde"). Reversible — poner a
-// true, o montar pos.enverde.app, reactiva el botón. La API /enverde/pos-login
-// sigue disponible para cuando exista TPV propio.
-const SHOW_POS_HANDOFF: boolean = false;
+// Handoff al TPV encendido para el piloto (2026-06-10: ventas reales pesan más
+// que la coherencia de marca). El TPV vive en pos.raizygrano.com hasta que
+// exista pos.enverde.app — entonces basta cambiar NEXT_PUBLIC_POS_URL.
+const SHOW_POS_HANDOFF: boolean = true;
 
 type Blocks = {
   quePaso: string;

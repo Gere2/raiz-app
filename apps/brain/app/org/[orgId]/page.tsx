@@ -15,7 +15,7 @@
  * uno self-contained); el resto son tarjetas + copy + enlaces. Cero lógica
  * financiera.
  */
-import { useEffect, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
@@ -33,6 +33,8 @@ export default function OrgHubPage() {
 
   const [user, setUser] = useState<User | null>(null);
   const [authReady, setAuthReady] = useState(false);
+  const [openingPos, setOpeningPos] = useState(false);
+  const [posError, setPosError] = useState<string | null>(null);
 
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, (u) => {
@@ -41,6 +43,26 @@ export default function OrgHubPage() {
     });
     return () => unsub();
   }, []);
+
+  // Ventas reales: handoff de identidad al TPV (mismo flujo que treasury/start).
+  const openPos = useCallback(async () => {
+    if (!user || openingPos) return;
+    setOpeningPos(true);
+    setPosError(null);
+    trackActivation(user, orgId, "cta_pos_clicked", "hub");
+    try {
+      const r = await authedFetch(user, `/api/enverde/pos-login?orgId=${encodeURIComponent(orgId)}&next=/pos`);
+      const d = (await r.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (r.ok && d.url) {
+        window.location.href = d.url;
+        return;
+      }
+      setPosError(d.error ?? "No pudimos abrir el TPV. Inténtalo de nuevo.");
+    } catch {
+      setPosError("No pudimos abrir el TPV. Inténtalo de nuevo.");
+    }
+    setOpeningPos(false);
+  }, [user, orgId, openingPos]);
 
   if (!authReady) return <Centered>Cargando…</Centered>;
   if (!user) {
@@ -130,11 +152,16 @@ export default function OrgHubPage() {
           body="Descubre qué productos realmente pagan tu sueldo y cuáles solo te dan trabajo."
           cta="Ver márgenes"
         />
-        <NextStepCard
+        <ActionCard
+          href="#tpv"
+          state="Disponible"
           title="Ventas"
-          body="Registra lo que vendes para saber qué productos mueven tu negocio."
-          state="Próximo paso"
-          note="Pronto podrás conectar tus ventas"
+          body="Cobra con el TPV y tus ventas reales alimentarán tus márgenes."
+          cta={openingPos ? "Abriendo TPV…" : "Abrir TPV"}
+          onClick={(e) => {
+            e.preventDefault();
+            openPos();
+          }}
         />
         <NextStepCard
           title="Acciones para mejorar"
@@ -142,6 +169,9 @@ export default function OrgHubPage() {
           state="Próximamente"
         />
       </div>
+      {posError && (
+        <p className="mt-3 text-sm" style={{ color: "var(--t-danger)" }}>{posError}</p>
+      )}
 
       {/* ─── Pie · fórmula + honestidad + privacidad + gratis ─── */}
       <section className="mt-8 rounded-xl border p-5" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
@@ -205,7 +235,7 @@ function ActionCard({
   title: string;
   body: string;
   cta: string;
-  onClick?: () => void;
+  onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
     <a href={href} onClick={onClick} className="block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>

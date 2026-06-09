@@ -30,6 +30,7 @@ const TreasurySection = dynamic(() => import("./components/sections/TreasurySect
 const StagingSection = dynamic(() => import("./components/sections/StagingSection"), { ssr: false });
 const MeetingCombosSection = dynamic(() => import("./components/sections/MeetingCombosSection"), { ssr: false });
 const ReportsSection = dynamic(() => import("./components/sections/ReportsSection"), { ssr: false });
+const VouchersSection = dynamic(() => import("./components/sections/VouchersSection"), { ssr: false });
 
 /* ── Form components (lazy-loaded) ── */
 const NewRecipeForm = dynamic(() => import("./components/forms/NewRecipeForm"), { ssr: false });
@@ -42,7 +43,7 @@ const AddIngPanel = dynamic(() => import("./components/forms/AddIngPanel"), { ss
 /* ─── Helpers ───────────────────────────────────────────────── */
 const calcTotal = (i: Ingredient[]) => i.reduce((s, x) => s + (x.lineCost || 0), 0);
 
-type Section = "home" | "products" | "recipes" | "detail" | "catalog" | "inventory" | "invoices" | "staging" | "skus" | "skuDetail" | "packaging" | "suppliers" | "supplierDetail" | "config" | "customers" | "rewards" | "events" | "quizzes" | "missions" | "margins" | "inventoryBrain" | "seasonal" | "posLink" | "treasury" | "combos" | "reports";
+type Section = "home" | "products" | "recipes" | "detail" | "catalog" | "inventory" | "invoices" | "staging" | "skus" | "skuDetail" | "packaging" | "suppliers" | "supplierDetail" | "config" | "customers" | "rewards" | "events" | "quizzes" | "missions" | "margins" | "inventoryBrain" | "seasonal" | "posLink" | "treasury" | "combos" | "reports" | "vouchers";
 
 /**
  * Secciones marcadas como experimentales / no usadas semanalmente.
@@ -71,12 +72,17 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
 /**
  * Deep-linking por ?section= (Fase 2.2b). Validado por marca: un café Enverde
  * solo puede abrir secciones de rentabilidad; cualquier otra (incluso forzada
- * por URL, p. ej. ?section=suppliers) cae a "home". Para Enverde "Caja" es la
- * ruta /org/[orgId]/treasury/start (NO la sección admin `treasury`), así que
+ * por URL) cae a "home". Para Enverde "Caja" es la ruta
+ * /org/[orgId]/treasury/start (NO la sección admin `treasury`), así que
  * `treasury` NO está en la allowlist Enverde. `margins` se habilita en Fase 2.3
  * (Márgenes por escandallo; empty state honesto si aún no hay ventas/costes).
+ * Profundidad de costes (piloto): `catalog` + `suppliers` + `invoices` para que
+ * los escandallos pasen de costes aproximados a costes reales.
  */
-const ENVERDE_ALLOWED_SECTIONS = new Set<string>(["home", "products", "recipes", "margins", "config"]);
+const ENVERDE_ALLOWED_SECTIONS = new Set<string>([
+  "home", "products", "recipes", "margins", "config",
+  "catalog", "suppliers", "invoices", "vouchers",
+]);
 
 /**
  * Raíz: todas las secciones navegables actuales (se excluyen las sub-vistas que
@@ -341,6 +347,14 @@ export default function BrainApp() {
             <NavBtn label="Productos" icon="▨" active={section === "products"} onClick={() => { setSection("products"); fetchProducts(); }} badge={String(products.length)} open={sideOpen} />
             <NavBtn label="Escandallos" icon="▤" active={section === "recipes" || section === "detail"} onClick={() => { if (section === "detail") goBack(); else setSection("recipes"); }} badge={String(recipes.length)} open={sideOpen} />
             <NavBtn label="Márgenes" icon="◧" active={section === "margins"} onClick={() => setSection("margins")} open={sideOpen} />
+            {/* Bonos simples (piloto): prepago org-scoped, independiente de exam-pass */}
+            <NavBtn label="Bonos" icon="✦" active={section === "vouchers"} onClick={() => setSection("vouchers")} open={sideOpen} />
+            {/* Profundidad de costes (piloto): mismas secciones org-scoped que Raíz */}
+            <NavGroup label="Tus costes" open={sideOpen} />
+            <NavBtn label="Materias primas" icon="▧" active={section === "catalog"} onClick={() => { setSection("catalog"); fetchCatalog(); }} badge={String(catalog.length)} open={sideOpen} />
+            <NavBtn label="Proveedores" icon="▥" active={section === "suppliers" || section === "supplierDetail"} onClick={() => { setSection("suppliers"); fetchSuppliers(); }} badge={String(suppliers.length)} open={sideOpen} />
+            <NavBtn label="Facturas" icon="▤" active={section === "invoices"} onClick={() => setSection("invoices")} open={sideOpen} />
+            <NavGroup label="Sistema" open={sideOpen} />
             <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
           </>
         )}
@@ -801,6 +815,9 @@ export default function BrainApp() {
 
         {/* ═══════ CUSTOMERS (NEW) ═══════ */}
         {section === "customers" && user && orgId && <CustomersSection user={user} orgId={orgId} />}
+
+        {/* ═══════ VOUCHERS (bonos simples Enverde) ═══════ */}
+        {section === "vouchers" && user && orgId && <VouchersSection user={user} orgId={orgId} />}
 
         {/* ═══════ REWARDS (NEW) ═══════ */}
         {section === "rewards" && user && orgId && <RewardsSection user={user} orgId={orgId} />}
