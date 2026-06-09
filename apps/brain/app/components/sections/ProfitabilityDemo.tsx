@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, type ReactNode, type CSSProperties } from "react";
 import { T, tableWrap, btnPrimary, fmt } from "../theme";
 import type { User } from "firebase/auth";
+import { trackActivation } from "@/lib/track-activation";
 
 /**
  * Cafetería demo (solo lectura) — "momento wow" para orgs vacías en el hub
@@ -87,7 +88,13 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
           Sin rellenar nada: una cafetería demo con productos, costes y ventas del mes
           para ver en 30 segundos qué te dirá Enverde con tus datos.
         </p>
-        <button onClick={() => setOpen(true)} style={{ ...btnPrimary, marginTop: 14, cursor: "pointer" }}>
+        <button
+          onClick={() => {
+            trackActivation(user, orgId, "demo_opened", "demo");
+            setOpen(true);
+          }}
+          style={{ ...btnPrimary, marginTop: 14, cursor: "pointer" }}
+        >
           Ver cafetería demo
         </button>
       </section>
@@ -171,10 +178,20 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
       </div>
 
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 14, marginTop: 20 }}>
-        <button onClick={() => setOpen(false)} style={{ ...btnPrimary, cursor: "pointer" }}>
+        <button
+          onClick={() => {
+            trackActivation(user, orgId, "demo_closed", "demo");
+            setOpen(false);
+          }}
+          style={{ ...btnPrimary, cursor: "pointer" }}
+        >
           Volver a mi negocio
         </button>
-        <a href={`/org/${orgId}/treasury/start`} style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: "underline" }}>
+        <a
+          href={`/org/${orgId}/treasury/start`}
+          onClick={() => trackActivation(user, orgId, "cta_upload_statement_clicked", "demo")}
+          style={{ fontSize: 13, fontWeight: 700, color: T.accent, textDecoration: "underline" }}
+        >
           Empezar con mis datos: subir extracto
         </a>
       </div>

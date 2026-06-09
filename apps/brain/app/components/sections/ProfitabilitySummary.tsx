@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
 import { T, tableWrap, btnPrimary, fmt } from "../theme";
 import type { User } from "firebase/auth";
+import { trackActivation } from "@/lib/track-activation";
 
 /**
  * Resumen de rentabilidad del mes (solo lectura). Cruza lo ya existente:
@@ -37,15 +38,23 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const hub = variant === "hub";
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const seenTracked = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     try {
       const r = await authedFetch(user, `/api/org/${orgId}/profitability-summary`);
-      if (r.ok) setData(await r.json());
+      if (r.ok) {
+        setData(await r.json());
+        // una sola vez por montaje: el resumen llegó a verse con datos
+        if (!seenTracked.current) {
+          seenTracked.current = true;
+          trackActivation(user, orgId, "profitability_summary_seen", variant);
+        }
+      }
     } catch (e) { console.error("Profitability summary:", e); }
     finally { setLoading(false); }
-  }, [user, orgId, authedFetch]);
+  }, [user, orgId, authedFetch, variant]);
 
   useEffect(() => { load(); }, [load]);
 
@@ -82,7 +91,13 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
           ) : (
             <>
               <div style={{ fontSize: 13, color: T.muted, marginBottom: 8 }}>Sube tu extracto para calcular tu sueldo.</div>
-              <button onClick={() => { window.location.href = `/org/${orgId}/treasury/start`; }} style={{ ...btnPrimary, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}>
+              <button
+                onClick={() => {
+                  trackActivation(user, orgId, "cta_upload_statement_clicked", variant);
+                  window.location.href = `/org/${orgId}/treasury/start`;
+                }}
+                style={{ ...btnPrimary, cursor: "pointer", fontSize: 12, padding: "6px 12px" }}
+              >
                 Subir extracto
               </button>
             </>
@@ -102,6 +117,9 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
               {hub ? (
                 <a
                   href={margin.hasRecipes ? "/?section=margins" : "/?section=recipes"}
+                  onClick={() =>
+                    trackActivation(user, orgId, margin.hasRecipes ? "cta_manual_sales_clicked" : "cta_recipes_clicked", variant)
+                  }
                   style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: T.accent, marginTop: 6, textDecoration: "underline" }}
                 >
                   {margin.hasRecipes ? "Añadir ventas manuales" : "Preparar escandallos"}

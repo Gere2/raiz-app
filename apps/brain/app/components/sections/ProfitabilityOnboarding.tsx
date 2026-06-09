@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import type { User } from "firebase/auth";
+import { trackActivation } from "@/lib/track-activation";
 
 /**
  * "Tu ruta para calcular la rentabilidad" — onboarding guiado del hub
@@ -114,6 +115,9 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
             <li key={st.title}>
               <a
                 href={st.href}
+                onClick={() =>
+                  trackActivation(user, orgId, "onboarding_step_clicked", "onboarding", { step: i + 1, state })
+                }
                 className="flex items-start gap-3 rounded-xl border p-4 transition"
                 style={{
                   borderColor: recommended ? "var(--t-accent)" : "var(--t-border)",

@@ -23,6 +23,7 @@ import { authedFetch } from "@/lib/authed-fetch";
 import ProfitabilitySummary from "@/app/components/sections/ProfitabilitySummary";
 import ProfitabilityOnboarding from "@/app/components/sections/ProfitabilityOnboarding";
 import ProfitabilityDemo from "@/app/components/sections/ProfitabilityDemo";
+import { trackActivation } from "@/lib/track-activation";
 
 const ACCENT = "#3F6B2E";
 
@@ -87,6 +88,7 @@ export default function OrgHubPage() {
       {/* ─── Tarjeta principal · Caja y sueldo (disponible) ───── */}
       <a
         href={`/org/${orgId}/treasury/start`}
+        onClick={() => trackActivation(user, orgId, "cta_upload_statement_clicked", "hub")}
         className="mt-8 block rounded-2xl border p-6 transition"
         style={{ borderColor: "var(--t-accent)", background: "var(--t-accent-light)" }}
       >
@@ -111,6 +113,7 @@ export default function OrgHubPage() {
           title="Productos"
           body="Ordena tu carta y prepara el cálculo de márgenes por producto."
           cta="Añadir productos"
+          onClick={() => trackActivation(user, orgId, "cta_products_clicked", "hub")}
         />
         <ActionCard
           href="/?section=recipes"
@@ -118,6 +121,7 @@ export default function OrgHubPage() {
           title="Escandallos"
           body="Añade costes aproximados para entender qué margen deja cada producto."
           cta="Preparar escandallos"
+          onClick={() => trackActivation(user, orgId, "cta_recipes_clicked", "hub")}
         />
         <ActionCard
           href="/?section=margins"
@@ -194,15 +198,17 @@ function ActionCard({
   title,
   body,
   cta,
+  onClick,
 }: {
   href: string;
   state: string;
   title: string;
   body: string;
   cta: string;
+  onClick?: () => void;
 }) {
   return (
-    <a href={href} className="block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
+    <a href={href} onClick={onClick} className="block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
       <Badge tone="now">{state}</Badge>
       <h3 className="mt-3 text-base font-bold" style={{ color: "var(--t-text)" }}>
         {title}

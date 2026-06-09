@@ -66,9 +66,28 @@ export const ANALYTICS_EVENTS = {
   "user.profile_viewed": true,
 } as const
 
+/**
+ * ACTIVATION events: best-effort UI tracking for the Enverde /org hub
+ * (demo cafetería, onboarding guiado, resumen de rentabilidad).
+ * Privacy: never carry amounts, products, extracts or customer names —
+ * the POST /api/org/[orgId]/events handler enforces an allowlist of types
+ * and sanitizes metadata down to { surface, step, state }.
+ */
+export const ACTIVATION_EVENTS = {
+  demo_opened: true,
+  demo_closed: true,
+  cta_upload_statement_clicked: true,
+  cta_products_clicked: true,
+  cta_recipes_clicked: true,
+  cta_manual_sales_clicked: true,
+  profitability_summary_seen: true,
+  onboarding_step_clicked: true,
+} as const
+
 export type DomainEventType = keyof typeof DOMAIN_EVENTS
 export type AnalyticsEventType = keyof typeof ANALYTICS_EVENTS
-export type EventType = DomainEventType | AnalyticsEventType
+export type ActivationEventType = keyof typeof ACTIVATION_EVENTS
+export type EventType = DomainEventType | AnalyticsEventType | ActivationEventType
 
 // ═══════════════════════════════════════════════════════════════
 // EVENT SHAPE
@@ -170,4 +189,9 @@ export function isDomainEvent(type: string): boolean {
 /** Check if an event type is an analytics event (best-effort) */
 export function isAnalyticsEvent(type: string): boolean {
   return type in ANALYTICS_EVENTS
+}
+
+/** Check if an event type is an activation event (best-effort UI tracking) */
+export function isActivationEvent(type: string): boolean {
+  return type in ACTIVATION_EVENTS
 }
