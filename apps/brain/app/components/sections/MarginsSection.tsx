@@ -8,6 +8,7 @@ import {
 } from "../theme";
 import type { User } from "firebase/auth";
 import type { Recipe } from "@/lib/types";
+import ManualSalesImpact from "./ManualSalesImpact";
 
 /* ─── Types ── */
 type MarginItem = {
@@ -95,7 +96,7 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
   if (posEmpty) {
     if (recipesLoading || recipes === null) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Cargando tus escandallos...</div>;
     if (recipes.length === 0) return <MarginsEmptyState />;
-    return <EstimatedMarginsView recipes={recipes} />;
+    return <EstimatedMarginsView recipes={recipes} user={user} orgId={orgId} authedFetch={authedFetch} />;
   }
 
   const sorted = [...data.items]
@@ -347,7 +348,12 @@ function computeRecipeMargin(r: Recipe): RecipeMargin {
   return { id: r.id, name, price, cost, marginEur, marginPct, status };
 }
 
-function EstimatedMarginsView({ recipes }: { recipes: Recipe[] }) {
+function EstimatedMarginsView({ recipes, user, orgId, authedFetch }: {
+  recipes: Recipe[];
+  user: User;
+  orgId: string;
+  authedFetch: (user: User, url: string, opts?: RequestInit) => Promise<Response>;
+}) {
   const rows = recipes.map(computeRecipeMargin).sort((a, b) => {
     // Calculables primero (mejor margen € arriba); los incompletos, al final.
     const aDone = a.marginEur !== null, bDone = b.marginEur !== null;
@@ -422,6 +428,8 @@ function EstimatedMarginsView({ recipes }: { recipes: Recipe[] }) {
           Añadir productos
         </button>
       </div>
+
+      <ManualSalesImpact recipes={recipes} user={user} orgId={orgId} authedFetch={authedFetch} />
     </div>
   );
 }
