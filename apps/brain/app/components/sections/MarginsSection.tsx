@@ -7,6 +7,7 @@ import {
   tbl, trHead, trBody, th, td, tdR, badge, btnSmall, btnPrimary, fmt,
 } from "../theme";
 import type { User } from "firebase/auth";
+import type { Recipe } from "@/lib/types";
 
 /* ─── Types ── */
 type MarginItem = {
@@ -55,6 +56,11 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
   const [catFilter, setCatFilter] = useState("all");
   const [view, setView] = useState<"products" | "categories">("products");
 
+  // Márgenes estimados desde escandallos (sin POS/tickets): se usan cuando el
+  // dashboard por-ventas viene vacío (caso típico Enverde).
+  const [recipes, setRecipes] = useState<Recipe[] | null>(null);
+  const [recipesLoading, setRecipesLoading] = useState(false);
+
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -64,13 +70,33 @@ export default function MarginsSection({ user, orgId, fcColor, fcBg, fcLabel, au
     finally { setLoading(false); }
   }, [user, orgId, days, authedFetch]);
 
+  const fetchRecipes = useCallback(async () => {
+    setRecipesLoading(true);
+    try {
+      const r = await authedFetch(user, `/api/org/${orgId}/recipes`);
+      setRecipes(r.ok ? ((await r.json()).recipes || []) : []);
+    } catch (e) { console.error("Recipes fetch:", e); setRecipes([]); }
+    finally { setRecipesLoading(false); }
+  }, [user, orgId, authedFetch]);
+
   useEffect(() => { fetchData(); }, [fetchData]);
 
+  const posEmpty = !data || data.items.length === 0;
+
+  // POS vacío → cargamos escandallos una vez para el cálculo estimado.
+  useEffect(() => {
+    if (!loading && posEmpty && recipes === null) fetchRecipes();
+  }, [loading, posEmpty, recipes, fetchRecipes]);
+
   if (loading && !data) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Cargando análisis de márgenes...</div>;
-  // Empty state honesto: o la API no devolvió datos, o aún no hay productos con
-  // ventas/costes. En vez de un dashboard en ceros (o "Sin datos"), guiamos al
-  // dueño a lo que falta para poder calcular márgenes.
-  if (!data || data.items.length === 0) return <MarginsEmptyState />;
+
+  // Sin datos de ventas (POS): calculamos márgenes estimados desde escandallos.
+  // Si tampoco hay escandallos, empty state honesto que guía a completarlos.
+  if (posEmpty) {
+    if (recipesLoading || recipes === null) return <div style={{ ...page, textAlign: "center", paddingTop: 80, color: T.dim }}>Cargando tus escandallos...</div>;
+    if (recipes.length === 0) return <MarginsEmptyState />;
+    return <EstimatedMarginsView recipes={recipes} />;
+  }
 
   const sorted = [...data.items]
     .filter(i => catFilter === "all" || i.category === catFilter)
@@ -282,6 +308,119 @@ function MarginsEmptyState() {
             Preparar escandallos
           </button>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Margen estimado desde escandallos (sin ventas/POS todavía) ───────────
+ * Reutiliza recipes (precio de venta + coste del escandallo). NO depende de
+ * tickets/orders. precio = sellingPrice, coste = totalCost, margen = precio−coste. */
+type RecipeMargin = {
+  id: string;
+  name: string;
+  price: number;
+  cost: number;
+  marginEur: number | null;
+  marginPct: number | null;
+  status: "sano" | "ajustado" | "revisar" | "falta-precio" | "falta-coste";
+};
+
+const STATUS_META: Record<RecipeMargin["status"], { label: string; color: string; bg: string }> = {
+  sano:           { label: "Sano",                color: "#16a34a", bg: "#dcfce7" },
+  ajustado:       { label: "Ajustado",            color: "#ca8a04", bg: "#fef9c3" },
+  revisar:        { label: "Revisar",             color: "#dc2626", bg: "#fee2e2" },
+  "falta-precio": { label: "Añade precio",        color: "#64748b", bg: "#f1f5f9" },
+  "falta-coste":  { label: "Completa escandallo", color: "#64748b", bg: "#f1f5f9" },
+};
+
+function computeRecipeMargin(r: Recipe): RecipeMargin {
+  const price = Number(r.sellingPrice) || 0;
+  const cost = Number(r.totalCost) || 0;
+  const name = r.productName || r.name;
+  // Sin coste no hay escandallo útil (mostrar un 100% sería engañoso).
+  if (cost <= 0) return { id: r.id, name, price, cost, marginEur: null, marginPct: null, status: "falta-coste" };
+  if (price <= 0) return { id: r.id, name, price, cost, marginEur: null, marginPct: null, status: "falta-precio" };
+  const marginEur = price - cost;
+  const marginPct = (marginEur / price) * 100;
+  const status = marginPct >= 65 ? "sano" : marginPct >= 50 ? "ajustado" : "revisar";
+  return { id: r.id, name, price, cost, marginEur, marginPct, status };
+}
+
+function EstimatedMarginsView({ recipes }: { recipes: Recipe[] }) {
+  const rows = recipes.map(computeRecipeMargin).sort((a, b) => {
+    // Calculables primero (mejor margen € arriba); los incompletos, al final.
+    const aDone = a.marginEur !== null, bDone = b.marginEur !== null;
+    if (aDone !== bDone) return aDone ? -1 : 1;
+    return (b.marginEur ?? 0) - (a.marginEur ?? 0);
+  });
+  const calc = rows.filter(r => r.marginEur !== null);
+  const avgPct = calc.length ? calc.reduce((s, r) => s + (r.marginPct || 0), 0) / calc.length : null;
+  const toReview = rows.filter(r => r.status === "revisar").length;
+
+  return (
+    <div style={page}>
+      <h1 style={pageTitle}>Márgenes</h1>
+      <p style={pageSub}>Qué productos pagan tu sueldo y cuáles solo te dan trabajo.</p>
+
+      {/* Banner: estimado desde escandallos, todavía sin ventas */}
+      <div style={{ ...tableWrap, padding: 16, marginBottom: 20, background: T.accent14, borderColor: T.accent40 }}>
+        <p style={{ fontSize: 13, lineHeight: 1.6, color: T.text, margin: 0 }}>
+          Este cálculo usa tus escandallos. Cuando registres ventas, Enverde podrá decirte
+          además qué productos aportan más dinero al mes.
+        </p>
+      </div>
+
+      {/* Resumen estimado */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: 12, marginBottom: 20 }}>
+        <Kpi label="Productos con escandallo" value={String(calc.length)} color={T.accent} />
+        <Kpi label="Margen medio estimado" value={avgPct !== null ? `${fmt(avgPct)}%` : "—"} color={avgPct !== null && avgPct >= 65 ? "#16a34a" : "#ca8a04"} />
+        <Kpi label="A revisar" value={String(toReview)} color={toReview > 0 ? "#dc2626" : "#16a34a"} sub="margen bajo" />
+      </div>
+
+      <div style={tableWrap}>
+        <table style={tbl}>
+          <thead><tr style={trHead}>
+            {["Producto", "Precio venta", "Coste estimado", "Margen €", "Margen %", "Estado"].map((h, i) =>
+              <th key={i} style={{ ...th, textAlign: i >= 1 && i <= 4 ? "right" : "left" }}>{h}</th>
+            )}
+          </tr></thead>
+          <tbody>
+            {rows.map(r => {
+              const m = STATUS_META[r.status];
+              return (
+                <tr key={r.id} style={trBody}>
+                  <td style={{ ...td, fontWeight: 500, fontSize: 13 }}>{r.name}</td>
+                  <td style={{ ...tdR, color: r.price > 0 ? T.text : T.dim }}>{r.price > 0 ? `${fmt(r.price)}€` : "—"}</td>
+                  <td style={{ ...tdR, color: r.cost > 0 ? T.text : T.dim }}>{r.cost > 0 ? `${fmt(r.cost)}€` : "—"}</td>
+                  <td style={{ ...tdR, fontWeight: 600, color: r.marginEur === null ? T.dim : r.marginEur >= 0 ? "#16a34a" : "#dc2626" }}>
+                    {r.marginEur === null ? "—" : `${fmt(r.marginEur)}€`}
+                  </td>
+                  <td style={tdR}>
+                    {r.marginPct === null
+                      ? <span style={{ color: T.dim }}>—</span>
+                      : <span style={{ ...badge, color: m.color, background: m.bg }}>{fmt(r.marginPct)}%</span>}
+                  </td>
+                  <td style={td}><span style={{ ...badge, color: m.color, background: m.bg }}>{m.label}</span></td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+
+      <p style={{ fontSize: 12, color: T.dim, marginTop: 16, lineHeight: 1.6 }}>
+        Estos márgenes son estimados a partir de tus costes; cuando registres ventas, Enverde
+        podrá cruzarlos con las unidades vendidas. Para afinarlos, completa el precio de venta
+        y el escandallo de cada producto.
+      </p>
+      <div style={{ display: "flex", gap: 12, marginTop: 12, flexWrap: "wrap" }}>
+        <button onClick={() => { window.location.href = "/?section=recipes"; }} style={{ ...btnPrimary, cursor: "pointer" }}>
+          Editar escandallos
+        </button>
+        <button onClick={() => { window.location.href = "/?section=products"; }} style={{ ...btnSmall, cursor: "pointer", color: T.accent, borderColor: T.accent40 }}>
+          Añadir productos
+        </button>
       </div>
     </div>
   );
