@@ -9,6 +9,10 @@ import type { User } from "firebase/auth";
  *   - sueldo recomendado desde el snapshot de treasury (caja),
  *   - margen bruto del mes desde ventas manuales × escandallos.
  * Carga /api/org/[orgId]/profitability-summary. Si algo falta, guía con CTAs.
+ *
+ * Se monta en dos sitios: dentro de Márgenes (variant="margins", defecto) y en
+ * el hub /org/[orgId] (variant="hub"). En el hub los empty states enlazan a las
+ * secciones (?section=…) porque el formulario de ventas no está "abajo".
  */
 type Summary = {
   period: string;
@@ -24,11 +28,13 @@ type Props = {
   user: User;
   orgId: string;
   authedFetch: (user: User, url: string, opts?: RequestInit) => Promise<Response>;
+  variant?: "margins" | "hub";
 };
 
 const SEMAFORO_COLOR: Record<string, string> = { verde: "#16a34a", amarillo: "#ca8a04", rojo: "#dc2626" };
 
-export default function ProfitabilitySummary({ user, orgId, authedFetch }: Props) {
+export default function ProfitabilitySummary({ user, orgId, authedFetch, variant = "margins" }: Props) {
+  const hub = variant === "hub";
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -54,7 +60,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch }: Props
   if (cash.semaforo === "amarillo" || cash.semaforo === "rojo") actions.push("Mantén colchón antes de cobrarte más");
 
   return (
-    <section style={{ ...tableWrap, padding: 24, marginBottom: 28, background: T.accent14, borderColor: T.accent40 }}>
+    <section style={{ ...tableWrap, padding: 24, ...(hub ? { marginTop: 32 } : { marginBottom: 28 }), background: T.accent14, borderColor: T.accent40 }}>
       <h2 style={{ fontSize: 20, fontWeight: 900, color: T.text, margin: "0 0 4px" }}>Resumen de rentabilidad del mes</h2>
       <p style={{ fontSize: 13, lineHeight: 1.6, color: T.muted, margin: "0 0 20px" }}>
         Enverde cruza tu caja, tus costes y las unidades vendidas para ayudarte a decidir cuánto puedes cobrarte.
@@ -93,9 +99,18 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch }: Props
           ) : (
             <>
               <div style={{ fontSize: 22, fontWeight: 800, color: T.dim }}>—</div>
-              <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
-                {margin.hasRecipes ? "Añade ventas manuales abajo" : "Prepara tus escandallos"}
-              </div>
+              {hub ? (
+                <a
+                  href={margin.hasRecipes ? "/?section=margins" : "/?section=recipes"}
+                  style={{ display: "inline-block", fontSize: 12, fontWeight: 700, color: T.accent, marginTop: 6, textDecoration: "underline" }}
+                >
+                  {margin.hasRecipes ? "Añadir ventas manuales" : "Preparar escandallos"}
+                </a>
+              ) : (
+                <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
+                  {margin.hasRecipes ? "Añade ventas manuales abajo" : "Prepara tus escandallos"}
+                </div>
+              )}
             </>
           )}
         </Card>

@@ -10,13 +10,16 @@
  * "próximo paso" honestos, sin prometer nada que no esté activo.
  *
  * Self-contained: auth propia (onAuthStateChanged), igual que treasury/start y
- * el resto de pages del brain. NO hace fetch de datos: son tarjetas + copy +
- * enlaces. Cero lógica financiera.
+ * el resto de pages del brain. La única carga de datos es el Resumen de
+ * rentabilidad (ProfitabilitySummary, solo lectura del endpoint ya existente);
+ * el resto son tarjetas + copy + enlaces. Cero lógica financiera.
  */
 import { useEffect, useState, type ReactNode } from "react";
 import { useParams } from "next/navigation";
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
+import { authedFetch } from "@/lib/authed-fetch";
+import ProfitabilitySummary from "@/app/components/sections/ProfitabilitySummary";
 
 const ACCENT = "#3F6B2E";
 
@@ -63,6 +66,11 @@ export default function OrgHubPage() {
       <p className="mt-3 text-sm font-semibold" style={{ color: "var(--t-accent)" }}>
         No solo vendas. Entiende cuánto te queda.
       </p>
+
+      {/* ─── Resumen de rentabilidad del mes (mismo endpoint que Márgenes;
+           se monta en silencio: si aún no hay datos muestra CTAs, si falla
+           la carga desaparece y el hub sigue explicando cómo empezar) ──── */}
+      <ProfitabilitySummary user={user} orgId={orgId} authedFetch={authedFetch} variant="hub" />
 
       {/* ─── Tarjeta principal · Caja y sueldo (disponible) ───── */}
       <a
