@@ -9,6 +9,7 @@ import {
 import type { User } from "firebase/auth";
 import type { Recipe } from "@/lib/types";
 import ManualSalesImpact from "./ManualSalesImpact";
+import ProfitabilitySummary from "./ProfitabilitySummary";
 
 /* ─── Types ── */
 type MarginItem = {
@@ -368,6 +369,8 @@ function EstimatedMarginsView({ recipes, user, orgId, authedFetch }: {
     <div style={page}>
       <h1 style={pageTitle}>Márgenes</h1>
       <p style={pageSub}>Qué productos pagan tu sueldo y cuáles solo te dan trabajo.</p>
+
+      <ProfitabilitySummary user={user} orgId={orgId} authedFetch={authedFetch} />
 
       {/* Banner: estimado desde escandallos, todavía sin ventas */}
       <div style={{ ...tableWrap, padding: 16, marginBottom: 20, background: T.accent14, borderColor: T.accent40 }}>
