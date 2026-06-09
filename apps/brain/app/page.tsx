@@ -75,6 +75,7 @@ export default function BrainApp() {
   const { orgs, orgId, setOrgId, loadingOrgs } = useOrg(user);
   const { config: orgConfig, loading: configLoading, updateConfig, fcColor, fcBg, fcLabel } = useOrgConfig(user, orgId);
   const brand = useBrand();
+  const isEnverde = brand.key === "enverde";
 
   /* ── Data state ── */
   const [products, setProducts] = useState<Product[]>([]);
@@ -292,6 +293,21 @@ export default function BrainApp() {
           <div style={{ fontSize: 11, color: T.sidebarAccent, padding: "2px 14px", marginBottom: 8, fontWeight: 600 }}>{orgs[0]?.name || orgId}</div>
         )}
 
+        {/* ═══ NAV ENVERDE — mínima, orientada a rentabilidad (2.2a) ═══ */}
+        {isEnverde && (
+          <>
+            <NavGroup label="Tu rentabilidad" open={sideOpen} />
+            <NavBtn label="Inicio" icon="◉" active={false} onClick={() => { window.location.href = orgId ? `/org/${orgId}` : "/"; }} open={sideOpen} />
+            <NavBtn label="Caja y sueldo" icon="◈" active={false} onClick={() => { window.location.href = orgId ? `/org/${orgId}/treasury/start` : "/"; }} open={sideOpen} />
+            <NavBtn label="Productos" icon="▨" active={section === "products"} onClick={() => { setSection("products"); fetchProducts(); }} badge={String(products.length)} open={sideOpen} />
+            <NavBtn label="Escandallos" icon="▤" active={section === "recipes" || section === "detail"} onClick={() => { if (section === "detail") goBack(); else setSection("recipes"); }} badge={String(recipes.length)} open={sideOpen} />
+            <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
+          </>
+        )}
+
+        {/* ═══ NAV RAÍZ — intacta; oculta para Enverde (2.2a) ═══ */}
+        {!isEnverde && (
+        <>
         {/* ═══ 1 · OPERACIONES — lo que abres a diario para decidir ═══ */}
         <NavGroup label="Operaciones" open={sideOpen} />
         <NavBtn label="Inicio" icon="◉" active={section === "home"} onClick={() => setSection("home")} open={sideOpen} />
@@ -364,6 +380,8 @@ export default function BrainApp() {
         >
           {sideOpen ? (showAdvanced ? "− Ocultar avanzado" : "+ Mostrar avanzado (8)") : (showAdvanced ? "−" : "+")}
         </button>
+        </>
+        )}
 
         <div style={{ flex: 1 }} />
         {/* Footer */}
