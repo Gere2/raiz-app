@@ -22,6 +22,7 @@ import { auth } from "@/lib/firebase";
 import { authedFetch } from "@/lib/authed-fetch";
 import ProfitabilitySummary from "@/app/components/sections/ProfitabilitySummary";
 import ProfitabilityOnboarding from "@/app/components/sections/ProfitabilityOnboarding";
+import ProfitabilityDemo from "@/app/components/sections/ProfitabilityDemo";
 
 const ACCENT = "#3F6B2E";
 
@@ -78,6 +79,10 @@ export default function OrgHubPage() {
            estados completado/recomendado/pendiente desde el mismo endpoint
            read-only que el resumen) ─────────────────────────────────── */}
       <ProfitabilityOnboarding user={user} orgId={orgId} authedFetch={authedFetch} />
+
+      {/* ─── Cafetería demo (read-only, datos hardcoded en cliente; solo
+           visible si a la org le faltan datos; no escribe nada) ────── */}
+      <ProfitabilityDemo user={user} orgId={orgId} authedFetch={authedFetch} />
 
       {/* ─── Tarjeta principal · Caja y sueldo (disponible) ───── */}
       <a
