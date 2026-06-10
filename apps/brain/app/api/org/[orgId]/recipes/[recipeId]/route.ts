@@ -49,10 +49,17 @@ export async function PATCH(req: Request, { params }: Params) {
     await requireOrgMember(req, orgId);
     const body = await req.json();
 
-    const allowed = ["name", "sellingPrice", "yieldQty", "yieldUnit"];
+    // productId vincula la receta a un producto del TPV (flujo del Resumen);
+    // string vacío permite desvincular.
+    const allowed = ["name", "sellingPrice", "yieldQty", "yieldUnit", "productId"];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];
+    }
+    if (updates.productId !== undefined) {
+      updates.productId = typeof updates.productId === "string"
+        ? updates.productId.trim().slice(0, 120)
+        : "";
     }
 
     if (Object.keys(updates).length === 0) {

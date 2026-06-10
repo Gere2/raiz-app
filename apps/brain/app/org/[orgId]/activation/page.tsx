@@ -42,6 +42,7 @@ const TYPE_LABELS: Record<string, string> = {
   cta_recipes_clicked: "Escandallos clicado",
   cta_manual_sales_clicked: "Ventas manuales clicadas",
   cta_pos_clicked: "TPV abierto",
+  pos_product_linked: "Producto TPV vinculado",
   profitability_summary_seen: "Resumen visto",
   onboarding_step_clicked: "Paso de onboarding clicado",
 };

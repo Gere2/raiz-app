@@ -27,6 +27,7 @@ const PILOT_EVENT_TYPES = [
   "cta_recipes_clicked",
   "cta_manual_sales_clicked",
   "cta_pos_clicked",
+  "pos_product_linked",
   "profitability_summary_seen",
   "onboarding_step_clicked",
 ] as const;

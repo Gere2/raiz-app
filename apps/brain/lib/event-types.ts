@@ -81,6 +81,7 @@ export const ACTIVATION_EVENTS = {
   cta_recipes_clicked: true,
   cta_manual_sales_clicked: true,
   cta_pos_clicked: true,
+  pos_product_linked: true,
   profitability_summary_seen: true,
   onboarding_step_clicked: true,
 } as const

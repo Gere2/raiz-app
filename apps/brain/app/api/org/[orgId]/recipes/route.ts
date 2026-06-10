@@ -37,7 +37,9 @@ export async function GET(
  * POST /api/org/[orgId]/recipes
  * Crea una receta nueva
  *
- * Body: { name, yieldQty?, yieldUnit?, sellingPrice? }
+ * Body: { name, yieldQty?, yieldUnit?, sellingPrice?, productId? }
+ * `productId` vincula la receta a un producto del TPV (flujo "vendido sin
+ * escandallo" del Resumen); el margen solo aparecerá cuando tenga coste real.
  */
 export async function POST(
   req: Request,
@@ -49,6 +51,7 @@ export async function POST(
     const body = await req.json();
 
     const { name, yieldQty = 1, yieldUnit = "taza", sellingPrice = 0 } = body;
+    const productId = typeof body.productId === "string" ? body.productId.trim().slice(0, 120) : "";
 
     if (!name) {
       return NextResponse.json({ error: "name obligatorio" }, { status: 400 });
@@ -61,6 +64,7 @@ export async function POST(
       yieldQty: Number(yieldQty),
       yieldUnit,
       sellingPrice: Number(sellingPrice),
+      ...(productId ? { productId } : {}),
       totalCost: 0,
       foodCostPct: 0,
       createdBy: uid,

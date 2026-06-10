@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef, type ReactNode } from "react";
-import { T, tableWrap, btnPrimary, fmt } from "../theme";
+import Link from "next/link";
+import { T, tableWrap, btnPrimary, btnSmall, input, fmt } from "../theme";
 import type { User } from "firebase/auth";
 import { trackActivation } from "@/lib/track-activation";
 
@@ -26,7 +27,10 @@ type Summary = {
     source?: "pos" | "manual" | "estimate" | "none";
     pos?: {
       revenue: number; unitsSold: number;
-      missingEscandallo: { count: number; names: string[]; revenue: number };
+      missingEscandallo: {
+        count: number; names: string[]; revenue: number;
+        products?: Array<{ productId: string; name: string; unitsSold: number; revenue: number; linkedRecipeId: string | null }>;
+      };
     } | null;
   };
 };
@@ -44,6 +48,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const hub = variant === "hub";
   const [data, setData] = useState<Summary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [linkOpen, setLinkOpen] = useState(false);
   const seenTracked = useRef(false);
 
   const load = useCallback(async () => {
@@ -184,9 +189,28 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
 
       {missing && missing.count > 0 && (
         <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "#fef3c7", border: "1px solid #fcd34d", fontSize: 13, color: "#92400e" }}>
-          <strong>{missing.count} producto{missing.count === 1 ? "" : "s"} vendido{missing.count === 1 ? "" : "s"} sin escandallo</strong>
-          {" — "}{fmt(missing.revenue)}€ de ventas sin margen calculado ({missing.names.join(", ")}).
-          {" "}No estimamos ese margen: crea sus escandallos para verlo de verdad.
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+            <span>
+              <strong>{missing.count} producto{missing.count === 1 ? "" : "s"} vendido{missing.count === 1 ? "" : "s"} sin escandallo</strong>
+              {" — "}{fmt(missing.revenue)}€ de ventas sin margen calculado.
+              {" "}No estimamos ese margen.
+            </span>
+            <button
+              onClick={() => setLinkOpen((v) => !v)}
+              style={{ ...btnSmall, background: "#92400e", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
+            >
+              {linkOpen ? "Cerrar" : "Vincular productos"}
+            </button>
+          </div>
+          {linkOpen && (
+            <LinkMissingProducts
+              user={user}
+              orgId={orgId}
+              authedFetch={authedFetch}
+              products={missing.products || []}
+              onChanged={load}
+            />
+          )}
         </div>
       )}
 
@@ -199,6 +223,147 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         </div>
       )}
     </section>
+  );
+}
+
+/**
+ * Panel inline del aviso "vendido sin escandallo": convierte el aviso en
+ * acción. Por producto del TPV: vincular a un escandallo existente (PATCH
+ * recipe.productId), crear uno nuevo ya vinculado (POST con productId), o
+ * dejarlo pendiente. El margen solo aparece cuando el escandallo tiene coste
+ * real — aquí no se inventa nada, solo se establece el vínculo.
+ */
+function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: {
+  user: User;
+  orgId: string;
+  authedFetch: (user: User, url: string, opts?: RequestInit) => Promise<Response>;
+  products: Array<{ productId: string; name: string; unitsSold: number; revenue: number; linkedRecipeId: string | null }>;
+  onChanged: () => void;
+}) {
+  const [recipes, setRecipes] = useState<Array<{ id: string; name: string; productId?: string }>>([]);
+  const [selected, setSelected] = useState<Record<string, string>>({});
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState("");
+
+  const loadRecipes = useCallback(async () => {
+    try {
+      const r = await authedFetch(user, `/api/org/${orgId}/recipes`);
+      if (r.ok) {
+        const d = await r.json();
+        setRecipes((d.recipes || []).map((x: Record<string, unknown>) => ({
+          id: x.id as string,
+          name: (x.productName as string) || (x.name as string) || "Receta",
+          productId: (x.productId as string) || undefined,
+        })));
+      }
+    } catch (e) { console.error("LinkMissingProducts recipes:", e); }
+  }, [user, orgId, authedFetch]);
+
+  useEffect(() => { loadRecipes(); }, [loadRecipes]);
+
+  const unlinkedRecipes = recipes.filter((r) => !r.productId);
+
+  const link = async (productId: string, recipeId: string) => {
+    if (!recipeId || busyId) return;
+    setBusyId(productId);
+    setError("");
+    try {
+      const r = await authedFetch(user, `/api/org/${orgId}/recipes/${recipeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ productId }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || "Error al vincular");
+      trackActivation(user, orgId, "pos_product_linked", "summary");
+      await loadRecipes();
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al vincular");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const createLinked = async (p: { productId: string; name: string; unitsSold: number; revenue: number }) => {
+    if (busyId) return;
+    setBusyId(p.productId);
+    setError("");
+    try {
+      const sellingPrice = p.unitsSold > 0 ? Math.round((p.revenue / p.unitsSold) * 100) / 100 : 0;
+      const r = await authedFetch(user, `/api/org/${orgId}/recipes`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: p.name, sellingPrice, productId: p.productId }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || "Error al crear el escandallo");
+      trackActivation(user, orgId, "pos_product_linked", "summary");
+      await loadRecipes();
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al crear el escandallo");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div style={{ marginTop: 12, borderTop: "1px solid #fcd34d", paddingTop: 12 }}>
+      {error && <div style={{ fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
+      {products.length === 0 && (
+        <div style={{ fontSize: 12 }}>No hay detalle de productos disponible. Recarga la página.</div>
+      )}
+      {products.map((p) => {
+        const busy = busyId === p.productId;
+        return (
+          <div key={p.productId} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid #fde68a" }}>
+            <div style={{ minWidth: 180, flex: "1 1 180px" }}>
+              <div style={{ fontWeight: 700, color: "#78350f" }}>{p.name}</div>
+              <div style={{ fontSize: 11 }}>{p.unitsSold} uds · {fmt(p.revenue)}€ este mes</div>
+            </div>
+            {p.linkedRecipeId ? (
+              <div style={{ fontSize: 12 }}>
+                Escandallo vinculado, <strong>falta su coste</strong>.{" "}
+                <Link href="/?section=recipes" style={{ color: "#92400e", fontWeight: 700, textDecoration: "underline" }}>
+                  Completar ingredientes →
+                </Link>
+              </div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                {unlinkedRecipes.length > 0 && (
+                  <>
+                    <select
+                      value={selected[p.productId] || ""}
+                      onChange={(e) => setSelected((s) => ({ ...s, [p.productId]: e.target.value }))}
+                      style={{ ...input, padding: "6px 10px", fontSize: 12, maxWidth: 190 }}
+                    >
+                      <option value="">Vincular a escandallo…</option>
+                      {unlinkedRecipes.map((r) => <option key={r.id} value={r.id}>{r.name}</option>)}
+                    </select>
+                    <button
+                      disabled={busy || !selected[p.productId]}
+                      onClick={() => link(p.productId, selected[p.productId])}
+                      style={{ ...btnSmall, opacity: busy || !selected[p.productId] ? 0.5 : 1, cursor: "pointer" }}
+                    >
+                      Vincular
+                    </button>
+                  </>
+                )}
+                <button
+                  disabled={busy}
+                  onClick={() => createLinked(p)}
+                  style={{ ...btnSmall, background: "#92400e", color: "#fff", border: "none", opacity: busy ? 0.5 : 1, cursor: "pointer" }}
+                >
+                  {busy ? "Guardando…" : "Crear escandallo vinculado"}
+                </button>
+              </div>
+            )}
+          </div>
+        );
+      })}
+      <div style={{ fontSize: 11, marginTop: 8 }}>
+        El margen de cada producto aparecerá cuando su escandallo tenga coste real (ingredientes). Nunca lo estimamos sin datos.
+      </div>
+    </div>
   );
 }
 

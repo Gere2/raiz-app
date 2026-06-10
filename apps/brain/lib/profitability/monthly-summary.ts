@@ -48,7 +48,24 @@ export interface MonthlyMargin {
   pos: null | {
     revenue: number;
     unitsSold: number;
-    missingEscandallo: { count: number; names: string[]; revenue: number };
+    missingEscandallo: {
+      count: number;
+      names: string[];
+      revenue: number;
+      /**
+       * Detalle accionable (cap 20, por revenue desc) para el flujo de
+       * vinculación TPV↔escandallo. `linkedRecipeId` ≠ null significa que YA
+       * hay escandallo vinculado pero sin coste real (falta completarlo);
+       * null = ningún escandallo apunta a este productId.
+       */
+      products: Array<{
+        productId: string;
+        name: string;
+        unitsSold: number;
+        revenue: number;
+        linkedRecipeId: string | null;
+      }>;
+    };
   };
 }
 
@@ -125,6 +142,10 @@ export function computeMonthlyMargin(input: {
     let topProduct: { name: string; gross: number } | null = null;
     const missingNames: string[] = [];
     let missingRevenue = 0;
+    const missingProducts: Array<{
+      productId: string; name: string; unitsSold: number; revenue: number;
+      linkedRecipeId: string | null;
+    }> = [];
 
     for (const [productId, agg] of Object.entries(byProduct)) {
       revenue += agg.revenue;
@@ -134,6 +155,13 @@ export function computeMonthlyMargin(input: {
         // Sin escandallo real: ingresos contados, margen NO inventado.
         missingNames.push(recipe?.name || agg.name);
         missingRevenue += agg.revenue;
+        missingProducts.push({
+          productId,
+          name: recipe?.name || agg.name,
+          unitsSold: agg.qty,
+          revenue: round2(agg.revenue),
+          linkedRecipeId: recipe ? recipe.id : null,
+        });
         continue;
       }
       const gross = agg.revenue - recipe.totalCost * agg.qty;
@@ -155,6 +183,9 @@ export function computeMonthlyMargin(input: {
           count: missingNames.length,
           names: missingNames.slice(0, 3),
           revenue: round2(missingRevenue),
+          products: missingProducts
+            .sort((a, b) => b.revenue - a.revenue)
+            .slice(0, 20),
         },
       },
     };
