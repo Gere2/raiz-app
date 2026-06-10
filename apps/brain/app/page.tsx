@@ -31,6 +31,7 @@ const StagingSection = dynamic(() => import("./components/sections/StagingSectio
 const MeetingCombosSection = dynamic(() => import("./components/sections/MeetingCombosSection"), { ssr: false });
 const ReportsSection = dynamic(() => import("./components/sections/ReportsSection"), { ssr: false });
 const VouchersSection = dynamic(() => import("./components/sections/VouchersSection"), { ssr: false });
+const ContactsSection = dynamic(() => import("./components/sections/ContactsSection"), { ssr: false });
 
 /* ── Form components (lazy-loaded) ── */
 const NewRecipeForm = dynamic(() => import("./components/forms/NewRecipeForm"), { ssr: false });
@@ -43,7 +44,7 @@ const AddIngPanel = dynamic(() => import("./components/forms/AddIngPanel"), { ss
 /* ─── Helpers ───────────────────────────────────────────────── */
 const calcTotal = (i: Ingredient[]) => i.reduce((s, x) => s + (x.lineCost || 0), 0);
 
-type Section = "home" | "products" | "recipes" | "detail" | "catalog" | "inventory" | "invoices" | "staging" | "skus" | "skuDetail" | "packaging" | "suppliers" | "supplierDetail" | "config" | "customers" | "rewards" | "events" | "quizzes" | "missions" | "margins" | "inventoryBrain" | "seasonal" | "posLink" | "treasury" | "combos" | "reports" | "vouchers";
+type Section = "home" | "products" | "recipes" | "detail" | "catalog" | "inventory" | "invoices" | "staging" | "skus" | "skuDetail" | "packaging" | "suppliers" | "supplierDetail" | "config" | "customers" | "rewards" | "events" | "quizzes" | "missions" | "margins" | "inventoryBrain" | "seasonal" | "posLink" | "treasury" | "combos" | "reports" | "vouchers" | "contacts";
 
 /**
  * Secciones marcadas como experimentales / no usadas semanalmente.
@@ -83,7 +84,7 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
 const ENVERDE_ALLOWED_SECTIONS = new Set<string>([
   "home", "products", "recipes", "margins", "config",
   "catalog", "suppliers", "invoices", "vouchers",
-  "treasury", "inventoryBrain", "seasonal", "skus",
+  "treasury", "inventoryBrain", "seasonal", "skus", "contacts",
 ]);
 
 /**
@@ -354,6 +355,8 @@ export default function BrainApp() {
             <NavBtn label="Márgenes" icon="◧" active={section === "margins"} onClick={() => setSection("margins")} open={sideOpen} />
             {/* Bonos simples (piloto): prepago org-scoped, independiente de exam-pass */}
             <NavBtn label="Bonos" icon="✦" active={section === "vouchers"} onClick={() => setSection("vouchers")} open={sideOpen} />
+            {/* Clientes simples: agenda org-scoped, independiente de customer_profiles (loyalty) */}
+            <NavBtn label="Clientes" icon="◎" active={section === "contacts"} onClick={() => setSection("contacts")} open={sideOpen} />
             {/* Profundidad de costes (piloto): mismas secciones org-scoped que Raíz */}
             <NavGroup label="Tus costes" open={sideOpen} />
             <NavBtn label="Materias primas" icon="▧" active={section === "catalog"} onClick={() => { setSection("catalog"); fetchCatalog(); }} badge={String(catalog.length)} open={sideOpen} />
@@ -825,6 +828,9 @@ export default function BrainApp() {
 
         {/* ═══════ VOUCHERS (bonos simples Enverde) ═══════ */}
         {section === "vouchers" && user && orgId && <VouchersSection user={user} orgId={orgId} />}
+
+        {/* ═══════ CONTACTS (clientes simples Enverde) ═══════ */}
+        {section === "contacts" && user && orgId && <ContactsSection user={user} orgId={orgId} />}
 
         {/* ═══════ REWARDS (NEW) ═══════ */}
         {section === "rewards" && user && orgId && <RewardsSection user={user} orgId={orgId} />}
