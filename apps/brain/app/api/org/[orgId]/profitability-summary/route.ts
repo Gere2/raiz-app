@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/firebase-admin";
 import { requireOrgMember } from "@/lib/require-auth";
+import {
+  computeMonthlyMargin,
+  normalizeTicketItems,
+  type RecipeLite,
+  type ManualLine,
+} from "@/lib/profitability/monthly-summary";
 
 /**
  * GET /api/org/[orgId]/profitability-summary
@@ -9,14 +15,15 @@ import { requireOrgMember } from "@/lib/require-auth";
  * llamar a Claude:
  *   - Caja/sueldo: lee el último snapshot cacheado por treasury/monthly-summary
  *     (treasury_monthly_snapshots/{month}.snapshot.possibleSalary / .semaforo).
- *   - Margen del mes: cruza orgs/{orgId}/manual_sales/{YYYY-MM} (unidades vendidas)
- *     con orgs/{orgId}/recipes (margen del escandallo = sellingPrice − totalCost).
+ *   - Margen del mes: prioridad de fuente (ver lib/profitability/monthly-summary):
+ *     tickets POS del mes → ventas manuales → estimación por escandallos → vacío.
+ *     `margin.source` lo dice explícitamente; los campos previos se conservan
+ *     (respuesta aditiva: ProfitabilityOnboarding sigue funcionando igual).
  *
- * No toca POS, ni la lógica de treasury, ni recalcula sueldo. Solo lee.
+ * No toca el POS ni la lógica de treasury. Solo lee.
  */
 type Params = { params: Promise<{ orgId: string }> };
 
-const round2 = (n: number) => Math.round(n * 100) / 100;
 const currentPeriodId = () => new Date().toISOString().slice(0, 7); // "YYYY-MM"
 
 export async function GET(req: Request, { params }: Params) {
@@ -25,11 +32,14 @@ export async function GET(req: Request, { params }: Params) {
     await requireOrgMember(req, orgId);
 
     const period = currentPeriodId();
+    const periodStart = new Date(`${period}-01T00:00:00.000Z`);
 
-    const [snapsSnap, salesSnap, recipesSnap] = await Promise.all([
+    const [snapsSnap, salesSnap, recipesSnap, ticketsSnap] = await Promise.all([
       db.collection("orgs").doc(orgId).collection("treasury_monthly_snapshots").get(),
       db.collection("orgs").doc(orgId).collection("manual_sales").doc(period).get(),
       db.collection("orgs").doc(orgId).collection("recipes").get(),
+      db.collection("orgs").doc(orgId).collection("tickets")
+        .where("createdAt", ">=", periodStart).get(),
     ]);
 
     /* ── Caja/sueldo: último snapshot disponible (por monthId = doc id) ── */
@@ -57,51 +67,32 @@ export async function GET(req: Request, { params }: Params) {
       };
     }
 
-    /* ── Margen del mes: recipes × ventas manuales ── */
-    const unitsByRecipe: Record<string, number> = {};
-    const lines = (salesSnap.exists ? (salesSnap.data()?.lines as Array<Record<string, unknown>>) : []) || [];
-    for (const l of lines) {
-      const rid = l.recipeId as string | undefined;
-      if (rid) unitsByRecipe[rid] = Number(l.unitsSold) || 0;
-    }
-
-    let grossMarginMonth = 0;
-    let topProduct: { name: string; gross: number } | null = null;
-    const toReview: string[] = [];
-    let pendingEscandallos = 0;
-    let hasSales = false;
-
-    for (const d of recipesSnap.docs) {
+    /* ── Margen del mes: POS → manual → estimación (lib/profitability) ── */
+    const recipes: RecipeLite[] = recipesSnap.docs.map((d) => {
       const r = d.data();
-      const name = (r.productName as string) || (r.name as string) || "Producto";
-      const price = Number(r.sellingPrice) || 0;
-      const cost = Number(r.totalCost) || 0;
-      if (cost <= 0) { pendingEscandallos++; continue; }
-      if (price <= 0) continue;
-      const unitMargin = price - cost;
-      const marginPct = (unitMargin / price) * 100;
-      if (marginPct < 50) toReview.push(name);
-      const units = unitsByRecipe[d.id] || 0;
-      if (units > 0) {
-        hasSales = true;
-        const gross = unitMargin * units;
-        grossMarginMonth += gross;
-        if (!topProduct || gross > topProduct.gross) topProduct = { name, gross: round2(gross) };
-      }
-    }
-
-    return NextResponse.json({
-      period,
-      cash,
-      margin: {
-        hasRecipes: recipesSnap.size > 0,
-        hasSales,
-        grossMarginMonth: round2(grossMarginMonth),
-        topProduct,
-        toReview: { count: toReview.length, names: toReview.slice(0, 3) },
-        pendingEscandallos,
-      },
+      return {
+        id: d.id,
+        name: (r.productName as string) || (r.name as string) || "Producto",
+        productId: (r.productId as string) || undefined,
+        sellingPrice: Number(r.sellingPrice) || 0,
+        totalCost: Number(r.totalCost) || 0,
+      };
     });
+
+    const manualLines: ManualLine[] = (
+      (salesSnap.exists ? (salesSnap.data()?.lines as Array<Record<string, unknown>>) : []) || []
+    ).map((l) => ({
+      recipeId: (l.recipeId as string) || "",
+      unitsSold: Number(l.unitsSold) || 0,
+    }));
+
+    const ticketItems = normalizeTicketItems(
+      ticketsSnap.docs.flatMap((d) => (d.data().items as unknown[]) || [])
+    );
+
+    const margin = computeMonthlyMargin({ recipes, manualLines, ticketItems });
+
+    return NextResponse.json({ period, cash, margin });
   } catch (e: unknown) {
     const err = e as { status?: number; message?: string };
     return NextResponse.json({ error: err.message ?? "Server error" }, { status: err.status || 500 });
