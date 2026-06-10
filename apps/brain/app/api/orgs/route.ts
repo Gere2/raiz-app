@@ -18,12 +18,19 @@ export async function GET(req: Request) {
     const data = userSnap.exists ? (userSnap.data() || {}) : {};
     const orgIds = Array.isArray(data.orgIds) ? data.orgIds.filter(Boolean) : [];
 
-    const orgs = await Promise.all(
-      orgIds.map(async (orgId: string) => {
-        const s = await db.collection("orgs").doc(orgId).get();
-        return { id: orgId, name: s.exists ? (s.data()?.name ?? orgId) : orgId };
-      })
-    );
+    // SEGURIDAD: users/{uid}.orgIds es escribible por el propio usuario (client
+    // SDK), así que NO basta como fuente de verdad — se verifica membresía real
+    // (orgs/{orgId}/members/{uid}) antes de devolver nada de la org.
+    const orgs = (
+      await Promise.all(
+        orgIds.map(async (orgId: string) => {
+          const member = await db.collection("orgs").doc(orgId).collection("members").doc(uid).get();
+          if (!member.exists) return null;
+          const s = await db.collection("orgs").doc(orgId).get();
+          return { id: orgId, name: s.exists ? (s.data()?.name ?? orgId) : orgId };
+        })
+      )
+    ).filter((o): o is { id: string; name: string } => o !== null);
 
     return NextResponse.json({ uid, orgs });
   } catch (e: unknown) {
