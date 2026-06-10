@@ -83,7 +83,7 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
 const ENVERDE_ALLOWED_SECTIONS = new Set<string>([
   "home", "products", "recipes", "margins", "config",
   "catalog", "suppliers", "invoices", "vouchers",
-  "treasury", "inventoryBrain",
+  "treasury", "inventoryBrain", "seasonal", "skus",
 ]);
 
 /**
@@ -350,6 +350,7 @@ export default function BrainApp() {
             <NavBtn label="Caja avanzada" icon="◇" active={section === "treasury"} onClick={() => setSection("treasury")} open={sideOpen} />
             <NavBtn label="Productos" icon="▨" active={section === "products"} onClick={() => { setSection("products"); fetchProducts(); }} badge={String(products.length)} open={sideOpen} />
             <NavBtn label="Escandallos" icon="▤" active={section === "recipes" || section === "detail"} onClick={() => { if (section === "detail") goBack(); else setSection("recipes"); }} badge={String(recipes.length)} open={sideOpen} />
+            <NavBtn label="Temporada" icon="❋" active={section === "seasonal"} onClick={() => setSection("seasonal")} open={sideOpen} />
             <NavBtn label="Márgenes" icon="◧" active={section === "margins"} onClick={() => setSection("margins")} open={sideOpen} />
             {/* Bonos simples (piloto): prepago org-scoped, independiente de exam-pass */}
             <NavBtn label="Bonos" icon="✦" active={section === "vouchers"} onClick={() => setSection("vouchers")} open={sideOpen} />
@@ -359,6 +360,7 @@ export default function BrainApp() {
             <NavBtn label="Proveedores" icon="▥" active={section === "suppliers" || section === "supplierDetail"} onClick={() => { setSection("suppliers"); fetchSuppliers(); }} badge={String(suppliers.length)} open={sideOpen} />
             <NavBtn label="Facturas" icon="▤" active={section === "invoices"} onClick={() => setSection("invoices")} open={sideOpen} />
             <NavBtn label="Inventario" icon="▦" active={section === "inventoryBrain"} onClick={() => setSection("inventoryBrain")} open={sideOpen} />
+            <NavBtn label="SKU Master" icon="▣" active={section === "skus" || section === "skuDetail"} onClick={() => { setSection("skus"); fetchSkus(); fetchPackagings(); }} badge={String(skus.length)} open={sideOpen} />
             <NavGroup label="Sistema" open={sideOpen} />
             <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
           </>
