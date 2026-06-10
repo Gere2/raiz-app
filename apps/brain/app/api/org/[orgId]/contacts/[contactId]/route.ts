@@ -5,6 +5,7 @@ import { requireOrgMember } from "@/lib/require-auth";
 type Params = { params: Promise<{ orgId: string; contactId: string }> };
 
 const EDITABLE_FIELDS = ["name", "phone", "email", "notes"] as const;
+const FIELD_MAX: Record<(typeof EDITABLE_FIELDS)[number], number> = { name: 120, phone: 120, email: 120, notes: 500 };
 
 export async function PATCH(req: Request, { params }: Params) {
   try {
@@ -14,7 +15,7 @@ export async function PATCH(req: Request, { params }: Params) {
 
     const updates: Record<string, string | FirebaseFirestore.FieldValue> = {};
     for (const field of EDITABLE_FIELDS) {
-      if (typeof body[field] === "string") updates[field] = body[field].trim();
+      if (typeof body[field] === "string") updates[field] = body[field].trim().slice(0, FIELD_MAX[field]);
     }
     if (updates.name === "") {
       return NextResponse.json({ error: "name no puede quedar vacío" }, { status: 400 });

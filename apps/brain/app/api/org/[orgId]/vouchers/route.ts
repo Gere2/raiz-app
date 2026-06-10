@@ -14,6 +14,10 @@ type Params = { params: Promise<{ orgId: string }> };
 
 const PAYMENT_METHODS = new Set(["cash", "card_terminal"]);
 const MAX_USES = 100;
+const MAX_NAME = 120;
+const MAX_NOTE = 500;
+
+const clip = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
 
 export async function GET(req: Request, { params }: Params) {
   try {
@@ -44,7 +48,7 @@ export async function POST(req: Request, { params }: Params) {
     const { uid } = await requireOrgMember(req, orgId);
     const body = await req.json();
 
-    const customerName = typeof body.customerName === "string" ? body.customerName.trim() : "";
+    const customerName = clip(body.customerName, MAX_NAME);
     if (!customerName) {
       return NextResponse.json({ error: "customerName obligatorio" }, { status: 400 });
     }
@@ -70,12 +74,12 @@ export async function POST(req: Request, { params }: Params) {
     const ref = db.collection("orgs").doc(orgId).collection("vouchers").doc();
     await ref.set({
       customerName,
-      customerRef: typeof body.customerRef === "string" ? body.customerRef.trim() : "",
+      customerRef: clip(body.customerRef, MAX_NAME),
       usesTotal,
       usesLeft: usesTotal,
       pricePaid,
       paymentMethod,
-      note: typeof body.note === "string" ? body.note.trim() : "",
+      note: clip(body.note, MAX_NOTE),
       status: "active",
       createdBy: uid,
       createdAt: FieldValue.serverTimestamp(),

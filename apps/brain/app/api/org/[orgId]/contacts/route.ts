@@ -12,6 +12,12 @@ import { requireOrgMember } from "@/lib/require-auth";
 
 type Params = { params: Promise<{ orgId: string }> };
 
+const MAX_NAME = 120;
+const MAX_CONTACT = 120;
+const MAX_NOTES = 500;
+
+const clip = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+
 export async function GET(req: Request, { params }: Params) {
   try {
     const { orgId } = await params;
@@ -41,15 +47,15 @@ export async function POST(req: Request, { params }: Params) {
     const { uid } = await requireOrgMember(req, orgId);
     const body = await req.json();
 
-    const name = typeof body.name === "string" ? body.name.trim() : "";
+    const name = clip(body.name, MAX_NAME);
     if (!name) return NextResponse.json({ error: "name obligatorio" }, { status: 400 });
 
     const ref = db.collection("orgs").doc(orgId).collection("contacts").doc();
     await ref.set({
       name,
-      phone: typeof body.phone === "string" ? body.phone.trim() : "",
-      email: typeof body.email === "string" ? body.email.trim() : "",
-      notes: typeof body.notes === "string" ? body.notes.trim() : "",
+      phone: clip(body.phone, MAX_CONTACT),
+      email: clip(body.email, MAX_CONTACT),
+      notes: clip(body.notes, MAX_NOTES),
       createdBy: uid,
       createdAt: FieldValue.serverTimestamp(),
       updatedAt: FieldValue.serverTimestamp(),
