@@ -62,7 +62,7 @@ const plural = (n: number, s: string, p: string) => (n === 1 ? s : p);
 const MONTHS_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
 
 /** "YYYY-MM" → "mayo de 2026"; null si el formato no es válido. */
-function cashMonthLabel(month: string | null | undefined): string | null {
+export function cashMonthLabel(month: string | null | undefined): string | null {
   if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
   const [y, m] = month.split("-");
   return `${MONTHS_ES[Number(m) - 1]} de ${y}`;

@@ -15,7 +15,7 @@ import type { ActivationEventType } from "./event-types";
 
 export type ActivationSurface = "hub" | "demo" | "onboarding" | "summary" | "margins";
 
-export type ActivationMetadata = { step?: number; state?: "completado" | "recomendado" | "pendiente" };
+export type ActivationMetadata = { step?: number; state?: "completado" | "recomendado" | "pendiente" | "atencion" };
 
 export function trackActivation(
   user: User,

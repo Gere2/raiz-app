@@ -95,12 +95,15 @@ export default function OrgHubPage() {
 
       {/* ─── Resumen de rentabilidad del mes (mismo endpoint que Márgenes;
            se monta en silencio: si aún no hay datos muestra CTAs, si falla
-           la carga desaparece y el hub sigue explicando cómo empezar) ──── */}
-      <ProfitabilitySummary user={user} orgId={orgId} authedFetch={authedFetch} variant="hub" />
+           la carga desaparece y el hub sigue explicando cómo empezar).
+           El id es el ancla de los CTAs "summary" de la checklist. ──── */}
+      <div id="resumen-rentabilidad">
+        <ProfitabilitySummary user={user} orgId={orgId} authedFetch={authedFetch} variant="hub" />
+      </div>
 
-      {/* ─── Tu ruta para calcular la rentabilidad (onboarding guiado;
-           estados completado/recomendado/pendiente desde el mismo endpoint
-           read-only que el resumen) ─────────────────────────────────── */}
+      {/* ─── Puesta a punto del diagnóstico (checklist de primer uso;
+           estados completado/atención/pendiente desde el mismo endpoint
+           read-only que el resumen — lib/profitability/readiness) ──── */}
       <ProfitabilityOnboarding user={user} orgId={orgId} authedFetch={authedFetch} />
 
       {/* ─── Cafetería demo (read-only, datos hardcoded en cliente; solo

@@ -55,7 +55,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ orgId: s
 }
 
 const ALLOWED_SURFACES = new Set(["hub", "demo", "onboarding", "summary", "margins"])
-const ALLOWED_STATES = new Set(["completado", "recomendado", "pendiente"])
+const ALLOWED_STATES = new Set(["completado", "recomendado", "pendiente", "atencion"])
 
 export async function POST(req: Request, { params }: { params: Promise<{ orgId: string }> }) {
   try {
