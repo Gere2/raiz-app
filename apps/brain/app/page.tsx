@@ -72,16 +72,18 @@ const EXPERIMENTAL_SECTIONS = new Set<Section>([
 /**
  * Deep-linking por ?section= (Fase 2.2b). Validado por marca: un café Enverde
  * solo puede abrir secciones de rentabilidad; cualquier otra (incluso forzada
- * por URL) cae a "home". Para Enverde "Caja" es la ruta
- * /org/[orgId]/treasury/start (NO la sección admin `treasury`), así que
- * `treasury` NO está en la allowlist Enverde. `margins` se habilita en Fase 2.3
- * (Márgenes por escandallo; empty state honesto si aún no hay ventas/costes).
- * Profundidad de costes (piloto): `catalog` + `suppliers` + `invoices` para que
- * los escandallos pasen de costes aproximados a costes reales.
+ * por URL) cae a "home". Para Enverde la entrada guiada de Caja sigue siendo
+ * /org/[orgId]/treasury/start; `treasury` (sección completa: movimientos,
+ * escenarios, vistas mensual/trimestral) se expone además como "Caja avanzada".
+ * `margins` se habilita en Fase 2.3 (Márgenes por escandallo; empty state
+ * honesto si aún no hay ventas/costes). Profundidad de costes (piloto):
+ * `catalog` + `suppliers` + `invoices` + `inventoryBrain` para que los
+ * escandallos pasen de costes aproximados a costes reales.
  */
 const ENVERDE_ALLOWED_SECTIONS = new Set<string>([
   "home", "products", "recipes", "margins", "config",
   "catalog", "suppliers", "invoices", "vouchers",
+  "treasury", "inventoryBrain",
 ]);
 
 /**
@@ -344,6 +346,8 @@ export default function BrainApp() {
             <NavGroup label="Tu rentabilidad" open={sideOpen} />
             <NavBtn label="Inicio" icon="◉" active={false} onClick={() => { window.location.href = orgId ? `/org/${orgId}` : "/"; }} open={sideOpen} />
             <NavBtn label="Caja y sueldo" icon="◈" active={false} onClick={() => { window.location.href = orgId ? `/org/${orgId}/treasury/start` : "/"; }} open={sideOpen} />
+            {/* Tesorería completa (movimientos, escenarios, mensual/trimestral) — la guiada sigue siendo la entrada principal */}
+            <NavBtn label="Caja avanzada" icon="◇" active={section === "treasury"} onClick={() => setSection("treasury")} open={sideOpen} />
             <NavBtn label="Productos" icon="▨" active={section === "products"} onClick={() => { setSection("products"); fetchProducts(); }} badge={String(products.length)} open={sideOpen} />
             <NavBtn label="Escandallos" icon="▤" active={section === "recipes" || section === "detail"} onClick={() => { if (section === "detail") goBack(); else setSection("recipes"); }} badge={String(recipes.length)} open={sideOpen} />
             <NavBtn label="Márgenes" icon="◧" active={section === "margins"} onClick={() => setSection("margins")} open={sideOpen} />
@@ -354,6 +358,7 @@ export default function BrainApp() {
             <NavBtn label="Materias primas" icon="▧" active={section === "catalog"} onClick={() => { setSection("catalog"); fetchCatalog(); }} badge={String(catalog.length)} open={sideOpen} />
             <NavBtn label="Proveedores" icon="▥" active={section === "suppliers" || section === "supplierDetail"} onClick={() => { setSection("suppliers"); fetchSuppliers(); }} badge={String(suppliers.length)} open={sideOpen} />
             <NavBtn label="Facturas" icon="▤" active={section === "invoices"} onClick={() => setSection("invoices")} open={sideOpen} />
+            <NavBtn label="Inventario" icon="▦" active={section === "inventoryBrain"} onClick={() => setSection("inventoryBrain")} open={sideOpen} />
             <NavGroup label="Sistema" open={sideOpen} />
             <NavBtn label="Configuración" icon="⚙" active={section === "config"} onClick={() => setSection("config")} open={sideOpen} />
           </>
