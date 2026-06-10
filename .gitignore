@@ -40,6 +40,10 @@ raiz-app-files/
 
 # secrets & credentials (NEVER commit these)
 **/secrets/
+# EXCEPCIÓN: apps/brain/lib/secrets es CÓDIGO FUENTE (crypto AES-GCM + BYOK),
+# no credenciales — la clave maestra vive en env (SECRETS_ENC_KEY), nunca aquí.
+!apps/brain/lib/secrets/
+!apps/brain/lib/secrets/**
 *-admin.json
 service-account*.json
 GOOGLE_APPLICATION_CREDENTIALS

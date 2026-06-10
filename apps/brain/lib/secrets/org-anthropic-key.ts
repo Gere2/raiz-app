@@ -12,7 +12,15 @@
 import { db, FieldValue } from "@/lib/firebase-admin";
 import { seal, open, type Sealed } from "./crypto";
 
-const secretRef = (orgId: string) =>
+// Top-level a propósito: las colecciones sin match en firestore.rules quedan
+// default-deny para el client SDK. Bajo orgs/{orgId}/* cualquier miembro tiene
+// read/write desde cliente — ni el sobre cifrado ni el contador de cupo deben
+// estar ahí (un miembro podría leer el blob o resetearse el cupo gratis).
+const secretRef = (orgId: string) => db.collection("org_secrets").doc(orgId);
+
+// Path original (pre-2026-06-10); se mantiene como fallback de LECTURA para no
+// perder claves BYOK ya configuradas. Las escrituras van solo al path nuevo.
+const legacySecretRef = (orgId: string) =>
   db.collection("orgs").doc(orgId).collection("secrets").doc("anthropic");
 
 export type AnthropicKeyStatus = {
@@ -55,24 +63,29 @@ export async function setOrgAnthropicKey(
     provider: "anthropic",
     updatedAt: FieldValue.serverTimestamp(),
   });
+  // El sobre legacy ya no debe sombrear al nuevo en los fallbacks de lectura.
+  await legacySecretRef(orgId).delete();
   return { last4 };
 }
 
 export async function getOrgAnthropicKeyStatus(
   orgId: string,
 ): Promise<AnthropicKeyStatus> {
-  const snap = await secretRef(orgId).get();
+  let snap = await secretRef(orgId).get();
+  if (!snap.exists) snap = await legacySecretRef(orgId).get();
   if (!snap.exists) return { configured: false, last4: null };
   return { configured: true, last4: (snap.data()?.last4 as string) ?? null };
 }
 
 export async function deleteOrgAnthropicKey(orgId: string): Promise<void> {
   await secretRef(orgId).delete();
+  await legacySecretRef(orgId).delete();
 }
 
 /** Carga + descifra la clave propia del café (uso SOLO server-side). */
 async function loadOrgKey(orgId: string): Promise<string | null> {
-  const snap = await secretRef(orgId).get();
+  let snap = await secretRef(orgId).get();
+  if (!snap.exists) snap = await legacySecretRef(orgId).get();
   if (!snap.exists) return null;
   const d = snap.data() as Partial<Sealed>;
   if (!d.ciphertext || !d.iv || !d.tag) return null;
@@ -109,19 +122,23 @@ function currentYearMonth(): string {
 
 /**
  * Consume una llamada del cupo mensual gratis de plataforma para un café Enverde.
- * Transacción read+increment atómica en `orgs/{orgId}/usage/{YYYY-MM}`.
+ * Transacción read+increment atómica en `enverde_usage/{orgId}_{YYYY-MM}`.
+ * Top-level (no orgs/{orgId}/usage): así el client SDK no puede tocar el
+ * contador (default-deny) — antes un miembro podía resetearse el cupo.
+ * Nota migración: el conteo del mes en curso (2026-06) reinicia una vez al
+ * cambiar de path; aceptable con el cap generoso y el piloto recién empezado.
  * Devuelve true si quedaba cupo (y lo descuenta), false si está agotado.
  */
 async function consumeEnverdeFreeCall(orgId: string): Promise<boolean> {
   const ym = currentYearMonth();
-  const ref = db.collection("orgs").doc(orgId).collection("usage").doc(ym);
+  const ref = db.collection("enverde_usage").doc(`${orgId}_${ym}`);
   return db.runTransaction(async (tx) => {
     const snap = await tx.get(ref);
     const used = (snap.data()?.platformAiCalls as number) ?? 0;
     if (used >= ENVERDE_FREE_AI_CALLS_PER_MONTH) return false;
     tx.set(
       ref,
-      { platformAiCalls: used + 1, month: ym, updatedAt: FieldValue.serverTimestamp() },
+      { platformAiCalls: used + 1, orgId, month: ym, updatedAt: FieldValue.serverTimestamp() },
       { merge: true },
     );
     return true;
