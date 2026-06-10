@@ -30,7 +30,9 @@ export type Insight = {
 };
 
 export interface InsightInput {
-  cash: { present: boolean; semaforo: string | null };
+  cash: { present: boolean; semaforo: string | null; month?: string | null };
+  /** Mes actual "YYYY-MM" (el payload lo trae como `period`); fallback: hoy. */
+  period?: string;
   margin: {
     source?: "pos" | "manual" | "estimate" | "none";
     hasRecipes: boolean;
@@ -56,6 +58,15 @@ const MAX_INSIGHTS = 5;
 
 const eur = (n: number) => `${(Math.round(n * 100) / 100).toFixed(2)}€`;
 const plural = (n: number, s: string, p: string) => (n === 1 ? s : p);
+
+const MONTHS_ES = ["enero", "febrero", "marzo", "abril", "mayo", "junio", "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"];
+
+/** "YYYY-MM" → "mayo de 2026"; null si el formato no es válido. */
+function cashMonthLabel(month: string | null | undefined): string | null {
+  if (!month || !/^\d{4}-(0[1-9]|1[0-2])$/.test(month)) return null;
+  const [y, m] = month.split("-");
+  return `${MONTHS_ES[Number(m) - 1]} de ${y}`;
+}
 
 export function computeProfitabilityInsights(input: InsightInput): Insight[] {
   const { cash, margin } = input;
@@ -167,13 +178,22 @@ export function computeProfitabilityInsights(input: InsightInput): Insight[] {
     }
   }
 
-  /* ── Caja en alerta: aplica con o sin ventas ── */
+  /* ── Caja en alerta: aplica con o sin ventas. Siempre dice de QUÉ MES es
+     la foto de caja (el snapshot puede ser viejo y parecer actual). ── */
   if (cash.present && (cash.semaforo === "amarillo" || cash.semaforo === "rojo")) {
+    const label = cashMonthLabel(cash.month);
+    const period = input.period ?? new Date().toISOString().slice(0, 7);
+    const stale = label !== null && cash.month !== period;
     out.push({
       id: "cash-caution",
       severity: "warning",
       title: "Cuida la caja",
-      body: `Tu último extracto deja el semáforo de caja en ${cash.semaforo}. Mantén colchón antes de cobrarte más.`,
+      body:
+        (label
+          ? `Tu foto de caja de ${label} deja el semáforo en ${cash.semaforo}.`
+          : `Según la última foto de caja disponible, el semáforo está en ${cash.semaforo}.`) +
+        " Mantén colchón antes de cobrarte más." +
+        (stale ? " Puede estar desactualizada si no has subido movimientos recientes." : ""),
     });
   }
 

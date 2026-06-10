@@ -226,3 +226,38 @@ describe("límites y extras", () => {
     expect(g!.body).toContain("manuales");
   });
 });
+
+describe("cash-caution: siempre dice de qué mes es la foto de caja", () => {
+  const cashCaution = (month: string | null | undefined, period: string) =>
+    computeProfitabilityInsights({
+      ...base({ cash: { present: true, semaforo: "rojo", month } }),
+      period,
+    }).find((i) => i.id === "cash-caution")!;
+
+  it("mes actual → nombra el mes, SIN aviso de antigüedad", () => {
+    const c = cashCaution("2026-06", "2026-06");
+    expect(c.body).toContain("junio de 2026");
+    expect(c.body).not.toContain("desactualizada");
+  });
+
+  it("mes anterior → nombra el mes Y avisa de posible desactualización", () => {
+    const c = cashCaution("2026-05", "2026-06");
+    expect(c.body).toContain("mayo de 2026");
+    expect(c.body).toContain("Puede estar desactualizada si no has subido movimientos recientes.");
+  });
+
+  it("sin month → fallback 'última foto de caja disponible', sin aviso", () => {
+    for (const bad of [null, undefined, "junio", "2026-13", ""]) {
+      const c = cashCaution(bad, "2026-06");
+      expect(c.body).toContain("última foto de caja disponible");
+      expect(c.body).not.toContain("desactualizada");
+    }
+  });
+
+  it("el insight no se oculta nunca por mes viejo y conserva el consejo", () => {
+    const c = cashCaution("2025-12", "2026-06");
+    expect(c.severity).toBe("warning");
+    expect(c.body).toContain("Mantén colchón antes de cobrarte más.");
+    expect(c.body).toContain("diciembre de 2025");
+  });
+});

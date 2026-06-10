@@ -81,7 +81,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
 
   // Diagnóstico "Lectura rápida": reglas puras y trazables sobre el payload
   // que ya tenemos — sin recalcular nada (lib/profitability/insights).
-  const insights = computeProfitabilityInsights({ cash, margin });
+  const insights = computeProfitabilityInsights({ cash, margin, period: data.period });
 
   const SOURCE_CHIP: Record<string, { label: string; bg: string; color: string } | undefined> = {
     pos: { label: "Ventas reales del TPV", bg: "#dcfce7", color: "#15803d" },
