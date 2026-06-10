@@ -120,7 +120,11 @@ service cloud.firestore {
     match /orders/{orderId} {
       allow read: if signedIn() &&
         (resource.data.customerUid == request.auth.uid || isStaff());
-      allow create: if signedIn();
+      // Un cliente solo puede crear pedidos atribuidos a sí mismo; el staff
+      // (POS) puede crear para cualquiera. Antes: signedIn() a secas permitía
+      // crear pedidos con el customerUid de otro usuario.
+      allow create: if isStaff() ||
+        (signedIn() && request.resource.data.customerUid == request.auth.uid);
       allow update: if isStaff() ||
         (signedIn() && resource.data.customerUid == request.auth.uid);
       allow delete: if isAdmin();
@@ -244,7 +248,10 @@ service cloud.firestore {
 
     match /orgs/{orgId} {
       allow read: if isOrgMember(orgId);
-      allow create: if signedIn();
+      // Creación SOLO via Admin SDK (POST /api/orgs con anti-join + máx 3, y
+      // el puente de provisión enverde). El único flujo cliente (bootstrapOrg)
+      // se eliminó: estaba muerto y roto (members exigía membresía previa).
+      allow create: if false;
       allow update, delete: if isOrgMember(orgId);
 
       // Rewards catalog: any signed-in user can read (customers need to see rewards)
@@ -255,8 +262,16 @@ service cloud.firestore {
       }
 
       // All other subcollections: recipes, catalog, skus, suppliers, etc.
+      // EXCEPTO secrets/usage (legacy): el sobre BYOK y el contador de cupo IA
+      // viven ya en org_secrets/enverde_usage (top-level, server-only), pero
+      // mientras exista el fallback de lectura legacy estos paths no deben ser
+      // accesibles desde cliente (un miembro podía leer el blob cifrado o
+      // resetearse el cupo). En rules basta que UN match conceda, así que la
+      // exclusión va aquí, no en un bloque if-false aparte.
       match /{subcollection}/{docId=**} {
-        allow read, write: if isOrgMember(orgId);
+        allow read, write: if isOrgMember(orgId)
+          && subcollection != "secrets"
+          && subcollection != "usage";
       }
     }
 
