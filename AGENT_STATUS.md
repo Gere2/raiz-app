@@ -29,7 +29,7 @@ completo para piloto:
 | `c355f08` | Hub honesto en vacío + CTA de vincular idempotente |
 | `8715f0e` | CTA "Vincular productos" de la checklist abre el panel directo |
 | `72892c4` | Checklist "Puesta a punto del diagnóstico" |
-| `1b8dc21` | Rules endurecidas (orders create atribuido, orgs create solo Admin SDK, secrets/usage fuera del cliente). **Desplegadas** según confirmación de Gere (2026-06-10); el deploy de rules es manual (`firebase deploy --only firestore:rules`), fuera del workflow Vercel-only. |
+| `1b8dc21` | Rules endurecidas (orders create atribuido, orgs create solo Admin SDK, secrets/usage fuera del cliente). **Desplegadas y verificadas contra la API** (2026-06-10): ruleset activo `10f111b4` creado 09:40:28Z, fuente idéntica byte a byte a `firestore.rules`@1b8dc21. `config/*` revisado el mismo día: solo `fiscalData` (lo impreso en ticket) + `ticketCounter`, nada sensible (detalle en AUDIT_ENVERDE_REPO.md §14). El deploy de rules es manual (`firebase deploy --only firestore:rules`), fuera del workflow Vercel-only. |
 | `0e26fae` | Registro de la org de validación pre-piloto en el script de purga (purga ya aplicada) |
 
 ## Flujo e2e validado en producción (2026-06-10)
