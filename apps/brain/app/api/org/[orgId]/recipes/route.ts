@@ -37,9 +37,11 @@ export async function GET(
  * POST /api/org/[orgId]/recipes
  * Crea una receta nueva
  *
- * Body: { name, yieldQty?, yieldUnit?, sellingPrice?, productId? }
+ * Body: { name, yieldQty?, yieldUnit?, sellingPrice?, productId?, estimatedUnitCost? }
  * `productId` vincula la receta a un producto del TPV (flujo "vendido sin
- * escandallo" del Resumen); el margen solo aparecerá cuando tenga coste real.
+ * escandallo" del Resumen). `estimatedUnitCost` es el "coste rápido"
+ * aproximado de ese flujo: da margen PROVISIONAL (marcado como estimado)
+ * hasta que los ingredientes reales pongan totalCost > 0, que siempre manda.
  */
 export async function POST(
   req: Request,
@@ -52,6 +54,8 @@ export async function POST(
 
     const { name, yieldQty = 1, yieldUnit = "taza", sellingPrice = 0 } = body;
     const productId = typeof body.productId === "string" ? body.productId.trim().slice(0, 120) : "";
+    const estimatedUnitCost = Number(body.estimatedUnitCost);
+    const estOk = Number.isFinite(estimatedUnitCost) && estimatedUnitCost > 0 && estimatedUnitCost <= 10000;
 
     if (!name) {
       return NextResponse.json({ error: "name obligatorio" }, { status: 400 });
@@ -65,6 +69,7 @@ export async function POST(
       yieldUnit,
       sellingPrice: Number(sellingPrice),
       ...(productId ? { productId } : {}),
+      ...(estOk ? { estimatedUnitCost: Math.round(estimatedUnitCost * 100) / 100 } : {}),
       totalCost: 0,
       foodCostPct: 0,
       createdBy: uid,

@@ -23,6 +23,23 @@ export interface RecipeLite {
   productId?: string;
   sellingPrice: number;
   totalCost: number;
+  /**
+   * Coste aproximado introducido a mano ("coste rápido" del panel de
+   * vinculación). Solo aplica mientras NO haya coste real de ingredientes:
+   * la precedencia es estructural — totalCost > 0 siempre manda.
+   */
+  estimatedUnitCost?: number;
+}
+
+/**
+ * Coste efectivo de una receta: ingredientes reales si existen; si no, el
+ * coste estimado (marcado como tal); si no hay ninguno, null (sin margen).
+ */
+function effectiveCost(r: RecipeLite): { cost: number; estimated: boolean } | null {
+  if (r.totalCost > 0) return { cost: r.totalCost, estimated: false };
+  const est = Number(r.estimatedUnitCost) || 0;
+  if (est > 0) return { cost: est, estimated: true };
+  return null;
 }
 
 export interface TicketItemLite {
@@ -45,6 +62,11 @@ export interface MonthlyMargin {
   topProduct: { name: string; gross: number } | null;
   toReview: { count: number; names: string[] };
   pendingEscandallos: number;
+  /**
+   * El margen del mes incluye al menos un producto cuyo coste es el
+   * aproximado ("coste rápido"), no el de ingredientes. La UI debe marcarlo.
+   */
+  estimatedCosts: { count: number; names: string[] };
   pos: null | {
     revenue: number;
     unitsSold: number;
@@ -124,6 +146,7 @@ export function computeMonthlyMargin(input: {
     hasRecipes: recipes.length > 0,
     toReview: { count: toReviewNames.length, names: toReviewNames.slice(0, 3) },
     pendingEscandallos,
+    estimatedCosts: { count: 0, names: [] as string[] },
   };
 
   /* ── 1. POS: ventas reales del TPV ── */
@@ -147,12 +170,15 @@ export function computeMonthlyMargin(input: {
       linkedRecipeId: string | null;
     }> = [];
 
+    const estimatedNames: string[] = [];
+
     for (const [productId, agg] of Object.entries(byProduct)) {
       revenue += agg.revenue;
       unitsSold += agg.qty;
       const recipe = recipeByProductId[productId];
-      if (!recipe || recipe.totalCost <= 0) {
-        // Sin escandallo real: ingresos contados, margen NO inventado.
+      const ec = recipe ? effectiveCost(recipe) : null;
+      if (!recipe || !ec) {
+        // Sin coste (ni real ni aproximado): ingresos contados, margen NO inventado.
         missingNames.push(recipe?.name || agg.name);
         missingRevenue += agg.revenue;
         missingProducts.push({
@@ -164,9 +190,10 @@ export function computeMonthlyMargin(input: {
         });
         continue;
       }
-      const gross = agg.revenue - recipe.totalCost * agg.qty;
+      const gross = agg.revenue - ec.cost * agg.qty;
       grossMarginMonth += gross;
       const name = recipe.name || agg.name;
+      if (ec.estimated) estimatedNames.push(name);
       if (!topProduct || gross > topProduct.gross) topProduct = { name, gross: round2(gross) };
     }
 
@@ -176,6 +203,7 @@ export function computeMonthlyMargin(input: {
       hasSales: true,
       grossMarginMonth: round2(grossMarginMonth),
       topProduct,
+      estimatedCosts: { count: estimatedNames.length, names: estimatedNames.slice(0, 3) },
       pos: {
         revenue: round2(revenue),
         unitsSold,
@@ -201,12 +229,16 @@ export function computeMonthlyMargin(input: {
   if (hasManualUnits) {
     let grossMarginMonth = 0;
     let topProduct: { name: string; gross: number } | null = null;
+    const estimatedNames: string[] = [];
     for (const [recipeId, units] of Object.entries(unitsByRecipe)) {
       if (units <= 0) continue;
       const r = recipeById[recipeId];
-      if (!r || r.totalCost <= 0 || r.sellingPrice <= 0) continue;
-      const gross = (r.sellingPrice - r.totalCost) * units;
+      if (!r || r.sellingPrice <= 0) continue;
+      const ec = effectiveCost(r);
+      if (!ec) continue;
+      const gross = (r.sellingPrice - ec.cost) * units;
       grossMarginMonth += gross;
+      if (ec.estimated) estimatedNames.push(r.name);
       if (!topProduct || gross > topProduct.gross) topProduct = { name: r.name, gross: round2(gross) };
     }
     return {
@@ -215,6 +247,7 @@ export function computeMonthlyMargin(input: {
       hasSales: true,
       grossMarginMonth: round2(grossMarginMonth),
       topProduct,
+      estimatedCosts: { count: estimatedNames.length, names: estimatedNames.slice(0, 3) },
       pos: null,
     };
   }

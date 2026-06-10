@@ -677,8 +677,8 @@ export default function BrainApp() {
             </div>
             <div style={tableWrap}>
               <table style={tbl}><thead><tr style={trHead}>{["Receta", "Producto", "Coste", "PVP", "Margen", "Food cost", ""].map((h, i) => <th key={i} style={{ ...th, textAlign: i >= 2 ? "right" : "left" }}>{h}</th>)}</tr></thead>
-              <tbody>{recipes.map(r => { const tc = r.totalCost || 0; const fc = r.foodCostPct || 0; const margin = r.sellingPrice - tc; return (
-                <tr key={r.id} onClick={() => openRecipe(r)} style={{ ...trBody, cursor: "pointer" }}><td style={td}><div style={{ fontWeight: 600, fontSize: 14 }}>{r.name}</div><div style={{ fontSize: 11, color: T.dim }}>{r.yieldQty} {r.yieldUnit}</div></td><td style={td}>{r.productId ? <span style={{ color: "#16a34a", fontSize: 12 }}>✓ Vinculado</span> : <span style={{ color: T.dim, fontSize: 12 }}>—</span>}</td><td style={tdR}>{fmt(tc)}€</td><td style={{ ...tdR, fontWeight: 600 }}>{fmt(r.sellingPrice)}€</td><td style={{ ...tdR, color: "#16a34a" }}>{fmt(margin)}€</td><td style={tdR}><span style={{ ...badge, color: fcColor(fc), background: fcBg(fc) }}>{fmt(fc)}%</span></td><td style={{ padding: "14px 8px", textAlign: "right" }}><button onClick={e => { e.stopPropagation(); deleteRecipe(r.id, r.name); }} style={btnGhost}>✕</button></td></tr>
+              <tbody>{recipes.map(r => { const tc = r.totalCost || 0; const est = tc > 0 ? 0 : (r.estimatedUnitCost || 0); const fc = est > 0 && r.sellingPrice > 0 ? (est / r.sellingPrice) * 100 : (r.foodCostPct || 0); const margin = r.sellingPrice - (tc > 0 ? tc : est); return (
+                <tr key={r.id} onClick={() => openRecipe(r)} style={{ ...trBody, cursor: "pointer" }}><td style={td}><div style={{ fontWeight: 600, fontSize: 14 }}>{r.name}</div><div style={{ fontSize: 11, color: T.dim }}>{r.yieldQty} {r.yieldUnit}</div></td><td style={td}>{r.productId ? <span style={{ color: "#16a34a", fontSize: 12 }}>✓ Vinculado</span> : <span style={{ color: T.dim, fontSize: 12 }}>—</span>}</td><td style={tdR}>{est > 0 ? <><span style={{ color: "#b45309" }}>≈ {fmt(est)}€</span><div style={{ fontSize: 10, color: "#b45309" }}>estimado</div></> : `${fmt(tc)}€`}</td><td style={{ ...tdR, fontWeight: 600 }}>{fmt(r.sellingPrice)}€</td><td style={{ ...tdR, color: est > 0 ? "#b45309" : "#16a34a" }}>{est > 0 ? "≈ " : ""}{fmt(margin)}€</td><td style={tdR}><span style={{ ...badge, color: est > 0 ? "#b45309" : fcColor(fc), background: est > 0 ? "#fef3c7" : fcBg(fc) }}>{est > 0 ? "≈ " : ""}{fmt(fc)}%</span></td><td style={{ padding: "14px 8px", textAlign: "right" }}><button onClick={e => { e.stopPropagation(); deleteRecipe(r.id, r.name); }} style={btnGhost}>✕</button></td></tr>
               ); })}{recipes.length === 0 && <tr><td colSpan={7} style={{ padding: 40, textAlign: "center", color: T.dim }}>Sin recetas.</td></tr>}</tbody></table>
             </div>
           </div>
@@ -686,7 +686,7 @@ export default function BrainApp() {
 
         {/* ═══════ RECIPE DETAIL ═══════ */}
         {section === "detail" && selectedRecipe && (() => {
-          const tc = selectedRecipe.totalCost || 0; const fc = selectedRecipe.foodCostPct || 0; const margin = selectedRecipe.sellingPrice - tc;
+          const tc = selectedRecipe.totalCost || 0; const est = tc > 0 ? 0 : (selectedRecipe.estimatedUnitCost || 0); const fc = est > 0 && selectedRecipe.sellingPrice > 0 ? (est / selectedRecipe.sellingPrice) * 100 : (selectedRecipe.foodCostPct || 0); const margin = selectedRecipe.sellingPrice - (tc > 0 ? tc : est);
           return (
             <div style={page}>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 24 }}>
@@ -699,11 +699,17 @@ export default function BrainApp() {
                   </div>
                 </div>
               </div>
+              {est > 0 && (
+                <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 12, color: "#92400e" }}>
+                  Este escandallo usa un <strong>coste aproximado de {fmt(est)}€</strong> como provisional.
+                  Completa el escandallo real añadiendo ingredientes abajo: en cuanto tengan coste, sustituyen al estimado.
+                </div>
+              )}
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12, marginBottom: 24 }}>
-                <Kpi label="Coste total" value={`${fmt(tc)}€`} />
+                <Kpi label="Coste total" value={est > 0 ? `≈ ${fmt(est)}€` : `${fmt(tc)}€`} color={est > 0 ? "#b45309" : undefined} badge={est > 0 ? "estimado" : undefined} badgeBg={est > 0 ? "#fef3c7" : undefined} />
                 <div style={kpiBox}><div style={{ ...kpiLbl, display: "flex", alignItems: "center", gap: 6 }}>PVP {!editPrice && <button onClick={() => { setPriceVal(selectedRecipe.sellingPrice); setEditPrice(true); }} style={{ background: "none", border: "none", color: T.dim, cursor: "pointer", fontSize: 12, padding: 0 }}>✎</button>}</div>{editPrice ? <div style={{ display: "flex", gap: 6, alignItems: "center", marginTop: 4 }}><input type="number" step="0.1" value={priceVal} onChange={e => setPriceVal(Number(e.target.value))} style={{ ...input, width: 80, fontFamily: T.mono, fontSize: 16, fontWeight: 700 }} autoFocus onKeyDown={e => { if (e.key === "Enter") updatePrice(priceVal); }} /><button onClick={() => updatePrice(priceVal)} style={{ ...btnSmall, background: T.accent, color: "#fff", border: "none" }} disabled={saving}>OK</button></div> : <div style={kpiVal}>{fmt(selectedRecipe.sellingPrice)}€</div>}</div>
-                <Kpi label="Margen" value={`${fmt(margin)}€`} color={margin > 0 ? "#16a34a" : "#dc2626"} />
-                <Kpi label="Food cost" value={`${fmt(fc)}%`} color={fcColor(fc)} badge={fcLabel(fc)} badgeBg={fcBg(fc)} />
+                <Kpi label="Margen" value={`${est > 0 ? "≈ " : ""}${fmt(margin)}€`} color={est > 0 ? "#b45309" : margin > 0 ? "#16a34a" : "#dc2626"} />
+                <Kpi label="Food cost" value={`${est > 0 ? "≈ " : ""}${fmt(fc)}%`} color={est > 0 ? "#b45309" : fcColor(fc)} badge={est > 0 ? "estimado" : fcLabel(fc)} badgeBg={est > 0 ? "#fef3c7" : fcBg(fc)} />
               </div>
               <div style={tableWrap}>
                 <div style={{ ...tableHead, display: "flex", justifyContent: "space-between", alignItems: "center" }}><span style={{ fontWeight: 600, fontSize: 13 }}>Ingredientes</span><button onClick={() => { setShowAddIng(!showAddIng); if (!showAddIng) fetchCatalog(); }} style={btnSmall}>+ Añadir</button></div>

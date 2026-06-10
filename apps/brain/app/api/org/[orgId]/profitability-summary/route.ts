@@ -76,6 +76,7 @@ export async function GET(req: Request, { params }: Params) {
         productId: (r.productId as string) || undefined,
         sellingPrice: Number(r.sellingPrice) || 0,
         totalCost: Number(r.totalCost) || 0,
+        estimatedUnitCost: Number(r.estimatedUnitCost) || 0,
       };
     });
 

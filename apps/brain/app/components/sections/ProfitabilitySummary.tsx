@@ -25,6 +25,8 @@ type Summary = {
     toReview: { count: number; names: string[] }; pendingEscandallos: number;
     /** Fuente del margen: tickets POS reales → ventas manuales → estimación. */
     source?: "pos" | "manual" | "estimate" | "none";
+    /** Productos cuyo margen usa el coste aproximado ("coste rápido"). */
+    estimatedCosts?: { count: number; names: string[] };
     pos?: {
       revenue: number; unitsSold: number;
       missingEscandallo: {
@@ -97,6 +99,11 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         {chip && (
           <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: chip.bg, color: chip.color }}>
             {chip.label}
+          </span>
+        )}
+        {(margin.estimatedCosts?.count ?? 0) > 0 && (
+          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}>
+            Margen con costes estimados
           </span>
         )}
       </div>
@@ -187,6 +194,16 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         </Card>
       </div>
 
+      {(margin.estimatedCosts?.count ?? 0) > 0 && (
+        <div style={{ marginTop: 14, padding: "8px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 12, color: "#92400e" }}>
+          El margen de {margin.estimatedCosts!.count === 1 ? "1 producto usa" : `${margin.estimatedCosts!.count} productos usan`} un coste aproximado
+          {" "}({margin.estimatedCosts!.names.join(", ")}).{" "}
+          <Link href="/?section=recipes" style={{ color: "#92400e", fontWeight: 700, textDecoration: "underline" }}>
+            Completar escandallos reales →
+          </Link>
+        </div>
+      )}
+
       {missing && missing.count > 0 && (
         <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "#fef3c7", border: "1px solid #fcd34d", fontSize: 13, color: "#92400e" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
@@ -242,8 +259,16 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
 }) {
   const [recipes, setRecipes] = useState<Array<{ id: string; name: string; productId?: string }>>([]);
   const [selected, setSelected] = useState<Record<string, string>>({});
+  const [costs, setCosts] = useState<Record<string, string>>({});
   const [busyId, setBusyId] = useState<string | null>(null);
   const [error, setError] = useState("");
+
+  const parsedCost = (productId: string): number | null => {
+    const raw = (costs[productId] || "").replace(",", ".").trim();
+    if (!raw) return null;
+    const n = Number(raw);
+    return Number.isFinite(n) && n > 0 ? Math.round(n * 100) / 100 : null;
+  };
 
   const loadRecipes = useCallback(async () => {
     try {
@@ -290,13 +315,20 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
     setError("");
     try {
       const sellingPrice = p.unitsSold > 0 ? Math.round((p.revenue / p.unitsSold) * 100) / 100 : 0;
+      const estimatedUnitCost = parsedCost(p.productId);
       const r = await authedFetch(user, `/api/org/${orgId}/recipes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: p.name, sellingPrice, productId: p.productId }),
+        body: JSON.stringify({
+          name: p.name,
+          sellingPrice,
+          productId: p.productId,
+          ...(estimatedUnitCost ? { estimatedUnitCost } : {}),
+        }),
       });
       if (!r.ok) throw new Error((await r.json()).error || "Error al crear el escandallo");
       trackActivation(user, orgId, "pos_product_linked", "summary");
+      if (estimatedUnitCost) trackActivation(user, orgId, "quick_cost_added", "summary");
       await loadRecipes();
       onChanged();
     } catch (e) {
@@ -305,6 +337,37 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
       setBusyId(null);
     }
   };
+
+  const saveQuickCost = async (p: { productId: string; linkedRecipeId: string | null }) => {
+    const est = parsedCost(p.productId);
+    if (!est || !p.linkedRecipeId || busyId) return;
+    setBusyId(p.productId);
+    setError("");
+    try {
+      const r = await authedFetch(user, `/api/org/${orgId}/recipes/${p.linkedRecipeId}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ estimatedUnitCost: est }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error || "Error al guardar el coste");
+      trackActivation(user, orgId, "quick_cost_added", "summary");
+      onChanged();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Error al guardar el coste");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const costInput = (productId: string) => (
+    <input
+      value={costs[productId] || ""}
+      onChange={(e) => setCosts((c) => ({ ...c, [productId]: e.target.value }))}
+      placeholder="Coste aprox. €"
+      inputMode="decimal"
+      style={{ ...input, padding: "6px 10px", fontSize: 12, width: 110 }}
+    />
+  );
 
   return (
     <div style={{ marginTop: 12, borderTop: "1px solid #fcd34d", paddingTop: 12 }}>
@@ -321,8 +384,16 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
               <div style={{ fontSize: 11 }}>{p.unitsSold} uds · {fmt(p.revenue)}€ este mes</div>
             </div>
             {p.linkedRecipeId ? (
-              <div style={{ fontSize: 12 }}>
-                Escandallo vinculado, <strong>falta su coste</strong>.{" "}
+              <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", fontSize: 12 }}>
+                <span>Escandallo vinculado, <strong>falta su coste</strong>.</span>
+                {costInput(p.productId)}
+                <button
+                  disabled={busy || !parsedCost(p.productId)}
+                  onClick={() => saveQuickCost(p)}
+                  style={{ ...btnSmall, opacity: busy || !parsedCost(p.productId) ? 0.5 : 1, cursor: "pointer" }}
+                >
+                  {busy ? "Guardando…" : "Guardar coste aprox."}
+                </button>
                 <Link href="/?section=recipes" style={{ color: "#92400e", fontWeight: 700, textDecoration: "underline" }}>
                   Completar ingredientes →
                 </Link>
@@ -348,6 +419,7 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
                     </button>
                   </>
                 )}
+                {costInput(p.productId)}
                 <button
                   disabled={busy}
                   onClick={() => createLinked(p)}
@@ -361,7 +433,8 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
         );
       })}
       <div style={{ fontSize: 11, marginTop: 8 }}>
-        El margen de cada producto aparecerá cuando su escandallo tenga coste real (ingredientes). Nunca lo estimamos sin datos.
+        Si pones un coste aprox., lo usaremos como coste provisional hasta que completes ingredientes (margen marcado como estimado).
+        Sin ningún coste, no inventamos margen.
       </div>
     </div>
   );

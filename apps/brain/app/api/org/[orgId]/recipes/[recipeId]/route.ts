@@ -50,8 +50,9 @@ export async function PATCH(req: Request, { params }: Params) {
     const body = await req.json();
 
     // productId vincula la receta a un producto del TPV (flujo del Resumen);
-    // string vacío permite desvincular.
-    const allowed = ["name", "sellingPrice", "yieldQty", "yieldUnit", "productId"];
+    // string vacío permite desvincular. estimatedUnitCost es el "coste rápido"
+    // provisional (0 lo borra); los ingredientes reales siempre mandan.
+    const allowed = ["name", "sellingPrice", "yieldQty", "yieldUnit", "productId", "estimatedUnitCost"];
     const updates: Record<string, unknown> = {};
     for (const key of allowed) {
       if (body[key] !== undefined) updates[key] = body[key];
@@ -60,6 +61,13 @@ export async function PATCH(req: Request, { params }: Params) {
       updates.productId = typeof updates.productId === "string"
         ? updates.productId.trim().slice(0, 120)
         : "";
+    }
+    if (updates.estimatedUnitCost !== undefined) {
+      const est = Number(updates.estimatedUnitCost);
+      if (!Number.isFinite(est) || est < 0 || est > 10000) {
+        return NextResponse.json({ error: "estimatedUnitCost debe ser un número entre 0 y 10000" }, { status: 400 });
+      }
+      updates.estimatedUnitCost = Math.round(est * 100) / 100;
     }
 
     if (Object.keys(updates).length === 0) {

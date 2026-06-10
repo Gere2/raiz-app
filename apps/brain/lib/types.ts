@@ -53,6 +53,8 @@ export type Recipe = {
   sellingPrice: number;
   totalCost: number;
   foodCostPct: number;
+  /** Coste aproximado provisional ("coste rápido"); solo aplica si totalCost <= 0. */
+  estimatedUnitCost?: number;
   productId?: string;
   productName?: string;
   ingredients?: Ingredient[];
