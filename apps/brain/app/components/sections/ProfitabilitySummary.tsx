@@ -5,6 +5,7 @@ import Link from "next/link";
 import { T, tableWrap, btnPrimary, btnSmall, input, fmt } from "../theme";
 import type { User } from "firebase/auth";
 import { trackActivation } from "@/lib/track-activation";
+import { computeProfitabilityInsights, type Insight } from "@/lib/profitability/insights";
 
 /**
  * Resumen de rentabilidad del mes (solo lectura). Cruza lo ya existente:
@@ -78,12 +79,9 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const source = margin.source ?? (margin.hasSales ? "manual" : margin.hasRecipes ? "estimate" : "none");
   const missing = source === "pos" ? margin.pos?.missingEscandallo : null;
 
-  const actions: string[] = [];
-  if (missing && missing.count > 0) actions.push("Crea el escandallo de los productos que ya vendes en el TPV");
-  if (source !== "pos" && margin.hasRecipes) actions.push("Sube ventas de tus productos con más margen");
-  if (margin.toReview.count > 0) actions.push("Revisa productos con margen bajo");
-  if (margin.pendingEscandallos > 0) actions.push("Completa escandallos pendientes");
-  if (cash.semaforo === "amarillo" || cash.semaforo === "rojo") actions.push("Mantén colchón antes de cobrarte más");
+  // Diagnóstico "Lectura rápida": reglas puras y trazables sobre el payload
+  // que ya tenemos — sin recalcular nada (lib/profitability/insights).
+  const insights = computeProfitabilityInsights({ cash, margin });
 
   const SOURCE_CHIP: Record<string, { label: string; bg: string; color: string } | undefined> = {
     pos: { label: "Ventas reales del TPV", bg: "#dcfce7", color: "#15803d" },
@@ -194,52 +192,100 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         </Card>
       </div>
 
-      {(margin.estimatedCosts?.count ?? 0) > 0 && (
-        <div style={{ marginTop: 14, padding: "8px 14px", borderRadius: 10, background: "#fffbeb", border: "1px solid #fde68a", fontSize: 12, color: "#92400e" }}>
-          El margen de {margin.estimatedCosts!.count === 1 ? "1 producto usa" : `${margin.estimatedCosts!.count} productos usan`} un coste aproximado
-          {" "}({margin.estimatedCosts!.names.join(", ")}).{" "}
-          <Link href="/?section=recipes" style={{ color: "#92400e", fontWeight: 700, textDecoration: "underline" }}>
-            Completar escandallos reales →
-          </Link>
-        </div>
-      )}
-
-      {missing && missing.count > 0 && (
-        <div style={{ marginTop: 14, padding: "10px 14px", borderRadius: 10, background: "#fef3c7", border: "1px solid #fcd34d", fontSize: 13, color: "#92400e" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-            <span>
-              <strong>{missing.count} producto{missing.count === 1 ? "" : "s"} vendido{missing.count === 1 ? "" : "s"} sin escandallo</strong>
-              {" — "}{fmt(missing.revenue)}€ de ventas sin margen calculado.
-              {" "}No estimamos ese margen.
-            </span>
-            <button
-              onClick={() => setLinkOpen((v) => !v)}
-              style={{ ...btnSmall, background: "#92400e", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
-            >
-              {linkOpen ? "Cerrar" : "Vincular productos"}
-            </button>
+      {insights.length > 0 && (
+        <div style={{ marginTop: 18 }}>
+          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Lectura rápida</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            {insights.map((ins) => (
+              <InsightRow
+                key={ins.id}
+                insight={ins}
+                hub={hub}
+                onCta={(action) => {
+                  if (action === "link-products") setLinkOpen((v) => !v);
+                  else if (action === "recipes") trackActivation(user, orgId, "cta_recipes_clicked", variant);
+                  else if (action === "manual-sales") trackActivation(user, orgId, "cta_manual_sales_clicked", variant);
+                  else if (action === "treasury") trackActivation(user, orgId, "cta_upload_statement_clicked", variant);
+                }}
+                orgId={orgId}
+                linkOpen={linkOpen}
+              >
+                {ins.id === "missing-escandallos" && linkOpen && (
+                  <LinkMissingProducts
+                    user={user}
+                    orgId={orgId}
+                    authedFetch={authedFetch}
+                    products={missing?.products || []}
+                    onChanged={load}
+                  />
+                )}
+              </InsightRow>
+            ))}
           </div>
-          {linkOpen && (
-            <LinkMissingProducts
-              user={user}
-              orgId={orgId}
-              authedFetch={authedFetch}
-              products={missing.products || []}
-              onChanged={load}
-            />
-          )}
-        </div>
-      )}
-
-      {actions.length > 0 && (
-        <div style={{ marginTop: 20 }}>
-          <div style={{ fontSize: 12, fontWeight: 700, color: T.text, marginBottom: 8 }}>Para mejorar tu sueldo</div>
-          <ul style={{ margin: 0, paddingLeft: 18, color: T.muted, fontSize: 13, lineHeight: 1.8 }}>
-            {actions.map((a, i) => <li key={i}>{a}</li>)}
-          </ul>
         </div>
       )}
     </section>
+  );
+}
+
+/* ── Lectura rápida ── */
+
+const SEVERITY_STYLE: Record<Insight["severity"], { border: string; bg: string; title: string }> = {
+  good: { border: "#86efac", bg: "#f0fdf4", title: "#15803d" },
+  warning: { border: "#fde68a", bg: "#fffbeb", title: "#92400e" },
+  action: { border: "#fcd34d", bg: "#fef3c7", title: "#92400e" },
+  info: { border: "#e5e7eb", bg: "#fafafa", title: "#374151" },
+};
+
+/**
+ * Una fila del diagnóstico: título + explicación + CTA opcional. El CTA
+ * lleva SIEMPRE a un flujo ya existente: panel de vinculación (toggle),
+ * Escandallos, ventas manuales o subir extracto. `children` permite anidar
+ * el panel de vinculación bajo el insight prioritario.
+ */
+function InsightRow({ insight, hub, orgId, linkOpen, onCta, children }: {
+  insight: Insight;
+  hub: boolean;
+  orgId: string;
+  linkOpen: boolean;
+  onCta: (action: NonNullable<Insight["cta"]>["action"]) => void;
+  children?: ReactNode;
+}) {
+  const s = SEVERITY_STYLE[insight.severity];
+  const cta = insight.cta;
+  // "manual-sales" en Márgenes no necesita link: el formulario está abajo.
+  const href = cta
+    ? cta.action === "recipes" ? "/?section=recipes"
+    : cta.action === "manual-sales" ? (hub ? "/?section=margins" : null)
+    : cta.action === "treasury" ? `/org/${orgId}/treasury/start`
+    : null
+    : null;
+
+  return (
+    <div style={{ padding: "10px 14px", borderRadius: 10, background: s.bg, border: `1px solid ${s.border}` }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ fontSize: 13, fontWeight: 700, color: s.title }}>{insight.title}</span>
+        {cta && cta.action === "link-products" && (
+          <button
+            onClick={() => onCta(cta.action)}
+            style={{ ...btnSmall, background: "#92400e", color: "#fff", border: "none", fontWeight: 700, cursor: "pointer" }}
+          >
+            {linkOpen ? "Cerrar" : cta.label}
+          </button>
+        )}
+        {cta && cta.action !== "link-products" && href && (
+          <a
+            href={href}
+            onClick={() => onCta(cta.action)}
+            style={{ fontSize: 12, fontWeight: 700, color: s.title, textDecoration: "underline" }}
+          >
+            {cta.label} →
+          </a>
+        )}
+      </div>
+      <div style={{ fontSize: 12, lineHeight: 1.6, color: T.muted, marginTop: 2 }}>{insight.body}</div>
+      {children}
+    </div>
   );
 }
 
