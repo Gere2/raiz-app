@@ -90,20 +90,24 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   // tras vincular un producto) y se rearma si el usuario navega a otro hash.
   useEffect(() => {
     if (!data) return;
-    const apply = () => {
+    // force=true en hashchange (real o sintético desde la checklist): un clic
+    // repetido debe volver a abrir/scrollear. force=false en re-runs por
+    // recarga de `data`: ahí el guard evita re-scroll mientras se vincula.
+    const apply = (force: boolean) => {
       if (window.location.hash !== RESUMEN_VINCULAR_HASH) {
         hashApplied.current = false;
         return;
       }
-      if (hashApplied.current) return;
+      if (!force && hashApplied.current) return;
       hashApplied.current = true;
       const m = data.margin.source === "pos" ? data.margin.pos?.missingEscandallo : null;
       if (m && m.count > 0) setLinkOpen(true);
       sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
     };
-    apply();
-    window.addEventListener("hashchange", apply);
-    return () => window.removeEventListener("hashchange", apply);
+    apply(false);
+    const onHash = () => apply(true);
+    window.addEventListener("hashchange", onHash);
+    return () => window.removeEventListener("hashchange", onHash);
   }, [data]);
 
   // Se monta en silencio: si falla, el resto de Márgenes sigue dando contexto.
@@ -217,12 +221,22 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
           )}
         </Card>
 
-        {/* Productos a revisar */}
+        {/* Productos a revisar — "margen sano" solo si hay al menos un producto
+             vendido con coste; con cero datos sería prometer salud sin base. */}
         <Card label="Productos a revisar">
-          <div style={{ fontSize: 22, fontWeight: 800, color: margin.toReview.count > 0 ? "#dc2626" : "#16a34a" }}>{margin.toReview.count}</div>
-          <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
-            {margin.toReview.count > 0 ? margin.toReview.names.join(", ") : "margen sano"}
-          </div>
+          {margin.topProduct ? (
+            <>
+              <div style={{ fontSize: 22, fontWeight: 800, color: margin.toReview.count > 0 ? "#dc2626" : "#16a34a" }}>{margin.toReview.count}</div>
+              <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
+                {margin.toReview.count > 0 ? margin.toReview.names.join(", ") : "margen sano"}
+              </div>
+            </>
+          ) : (
+            <>
+              <div style={{ fontSize: 22, fontWeight: 800, color: T.dim }}>—</div>
+              <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>se llenará con ventas y costes</div>
+            </>
+          )}
         </Card>
       </div>
 

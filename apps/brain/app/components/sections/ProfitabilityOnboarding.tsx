@@ -161,9 +161,15 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
               {st.cta ? (
                 <a
                   href={hrefFor(st.cta)}
-                  onClick={() =>
-                    trackActivation(user, orgId, "onboarding_step_clicked", "onboarding", { step: i + 1, state: st.state })
-                  }
+                  onClick={() => {
+                    trackActivation(user, orgId, "onboarding_step_clicked", "onboarding", { step: i + 1, state: st.state });
+                    // Clic repetido con el hash ya en la URL: el navegador no
+                    // emite hashchange, así que lo emitimos para que el Resumen
+                    // vuelva a abrir el panel y scrollear.
+                    if (st.cta?.action === "link-products" && window.location.hash === RESUMEN_VINCULAR_HASH) {
+                      window.dispatchEvent(new Event("hashchange"));
+                    }
+                  }}
                   className="flex items-start gap-3 rounded-xl border p-4 transition"
                   style={rowStyle}
                 >
