@@ -19,8 +19,9 @@ const TARGET_ORG_IDS = [
   "audit-test-do-not-use-l6isnk",
   "totally-different-name-inc-9tfk27",
   "smoke-test-enverde-8azyia", // auditoría flujo post-activación (2026-06-08)
+  "cafe-test-prepiloto-yi35ti", // validación pre-piloto rules+TPV (2026-06-11)
 ];
-const TEST_RE = /(example\.com|audit|probe|do-not-use|totally-different|smoke-test-enverde)/i;
+const TEST_RE = /(example\.com|audit|probe|do-not-use|totally-different|smoke-test-enverde|prepiloto)/i;
 
 function loadEnvVar(file, key) {
   try {
