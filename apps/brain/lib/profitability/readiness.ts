@@ -17,10 +17,15 @@ import { cashMonthLabel, type InsightInput } from "./insights";
 
 export type StepState = "completado" | "pendiente" | "atencion";
 
-/** Acción semántica; la UI resuelve el href (mismos destinos que la Lectura rápida). */
+/**
+ * Acción semántica; la UI resuelve el href (mismos destinos que la Lectura
+ * rápida). "link-products" = bajar al Resumen Y abrir el panel de vinculación
+ * directamente; solo se emite cuando hay productos del TPV sin coste (si no,
+ * el panel abriría vacío) — en el resto de casos se usa "summary" a secas.
+ */
 export type StepCta = {
   label: string;
-  action: "manual-sales" | "summary" | "recipes" | "treasury";
+  action: "manual-sales" | "summary" | "link-products" | "recipes" | "treasury";
 };
 
 export type ChecklistStep = {
@@ -72,7 +77,7 @@ export function computePilotReadinessChecklist(input: InsightInput): PilotReadin
     link = {
       id: "link", state: "pendiente", title: "Vincula lo vendido a su escandallo",
       desc: `${missing.count} ${plural(missing.count, "producto vendido", "productos vendidos")} (${eur(missing.revenue)}) sin coste asociado: ese margen no se calcula.`,
-      cta: { label: "Vincular productos", action: "summary" },
+      cta: { label: "Vincular productos", action: "link-products" },
     };
   } else if (hasCostedSales) {
     link = {
@@ -89,7 +94,7 @@ export function computePilotReadinessChecklist(input: InsightInput): PilotReadin
     quickCost = {
       id: "quick-cost", state: "pendiente", title: "Pon un coste aproximado donde falte",
       desc: "Al vincular puedes poner un coste aprox. por unidad: margen provisional al instante, sin esperar a los ingredientes.",
-      cta: { label: "Ponerlo al vincular", action: "summary" },
+      cta: { label: "Ponerlo al vincular", action: "link-products" },
     };
   } else if (estCount > 0) {
     quickCost = {

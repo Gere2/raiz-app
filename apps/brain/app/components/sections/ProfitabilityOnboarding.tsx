@@ -6,6 +6,7 @@ import { trackActivation } from "@/lib/track-activation";
 import { computePilotReadinessChecklist, type ChecklistStep, type StepState } from "@/lib/profitability/readiness";
 import type { InsightInput } from "@/lib/profitability/insights";
 import PilotFeedback from "./PilotFeedback";
+import { RESUMEN_VINCULAR_HASH } from "./ProfitabilitySummary";
 
 /**
  * "Puesta a punto del diagnóstico" — checklist de primer uso del hub
@@ -15,7 +16,8 @@ import PilotFeedback from "./PilotFeedback";
  * estados completado / atención / pendiente desde datos reales, sin lógica
  * financiera nueva. Si la carga falla degrada a "todo pendiente" en vez de
  * desaparecer. Los CTAs llevan a flujos existentes (Resumen, Escandallos,
- * ventas manuales, extracto); nada se bloquea.
+ * ventas manuales, extracto); "link-products" usa RESUMEN_VINCULAR_HASH para
+ * que el Resumen abra el panel de vinculación directamente. Nada se bloquea.
  */
 
 type Props = {
@@ -71,6 +73,8 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
       case "recipes": return "/?section=recipes";
       case "treasury": return `/org/${orgId}/treasury/start`;
       case "summary": return "#resumen-rentabilidad";
+      // El Resumen escucha este hash: scroll + abre el panel de vinculación.
+      case "link-products": return RESUMEN_VINCULAR_HASH;
     }
   };
 

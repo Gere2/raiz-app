@@ -45,6 +45,13 @@ type Props = {
   variant?: "margins" | "hub";
 };
 
+/**
+ * Deep-link del checklist ("Puesta a punto"): baja al Resumen Y abre el panel
+ * de vinculación TPV ↔ escandallo sin el clic intermedio en el insight. No hay
+ * elemento con este id: el scroll lo hace el efecto de abajo, no el navegador.
+ */
+export const RESUMEN_VINCULAR_HASH = "#resumen-rentabilidad:vincular";
+
 const SEMAFORO_COLOR: Record<string, string> = { verde: "#16a34a", amarillo: "#ca8a04", rojo: "#dc2626" };
 
 export default function ProfitabilitySummary({ user, orgId, authedFetch, variant = "margins" }: Props) {
@@ -53,6 +60,8 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const [loading, setLoading] = useState(true);
   const [linkOpen, setLinkOpen] = useState(false);
   const seenTracked = useRef(false);
+  const sectionRef = useRef<HTMLElement | null>(null);
+  const hashApplied = useRef(false);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -71,6 +80,31 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   }, [user, orgId, authedFetch, variant]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Deep-link RESUMEN_VINCULAR_HASH: al cargar con el hash (o al cambiar a él
+  // vía clic en la checklist) baja al Resumen y abre el panel de vinculación —
+  // pero solo si de verdad hay productos del TPV sin coste; con un hash viejo
+  // y nada que vincular se limita al scroll (nunca un panel vacío). Solo LEE
+  // el hash, nunca lo escribe → no puede haber loops con hashchange. El ref
+  // hashApplied evita re-scroll/re-apertura en cada recarga de `data` (p. ej.
+  // tras vincular un producto) y se rearma si el usuario navega a otro hash.
+  useEffect(() => {
+    if (!data) return;
+    const apply = () => {
+      if (window.location.hash !== RESUMEN_VINCULAR_HASH) {
+        hashApplied.current = false;
+        return;
+      }
+      if (hashApplied.current) return;
+      hashApplied.current = true;
+      const m = data.margin.source === "pos" ? data.margin.pos?.missingEscandallo : null;
+      if (m && m.count > 0) setLinkOpen(true);
+      sectionRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+    };
+    apply();
+    window.addEventListener("hashchange", apply);
+    return () => window.removeEventListener("hashchange", apply);
+  }, [data]);
 
   // Se monta en silencio: si falla, el resto de Márgenes sigue dando contexto.
   if (loading || !data) return null;
@@ -91,7 +125,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const chip = SOURCE_CHIP[source];
 
   return (
-    <section style={{ ...tableWrap, padding: 24, ...(hub ? { marginTop: 32 } : { marginBottom: 28 }), background: T.accent14, borderColor: T.accent40 }}>
+    <section ref={sectionRef} style={{ ...tableWrap, padding: 24, ...(hub ? { marginTop: 32 } : { marginBottom: 28 }), background: T.accent14, borderColor: T.accent40 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", margin: "0 0 4px" }}>
         <h2 style={{ fontSize: 20, fontWeight: 900, color: T.text, margin: 0 }}>Resumen de rentabilidad del mes</h2>
         {chip && (

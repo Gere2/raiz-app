@@ -78,7 +78,7 @@ describe("ventas", () => {
 });
 
 describe("vinculación y coste aproximado", () => {
-  it("POS con missing → link pendiente con CTA al Resumen; quick-cost lo ofrece", () => {
+  it("POS con missing → link pendiente con CTA que abre el panel de vinculación; quick-cost lo ofrece", () => {
     const { r, step } = byId(base({
       margin: {
         source: "pos", hasSales: true, hasRecipes: true,
@@ -88,10 +88,18 @@ describe("vinculación y coste aproximado", () => {
     }));
     expect(step.link.state).toBe("pendiente");
     expect(step.link.desc).toContain("42.00€");
-    expect(step.link.cta?.action).toBe("summary");
+    expect(step.link.cta?.action).toBe("link-products");
     expect(step["quick-cost"].state).toBe("pendiente");
-    expect(step["quick-cost"].cta?.action).toBe("summary");
+    expect(step["quick-cost"].cta?.action).toBe("link-products");
     expect(r.ready).toBe(false);
+  });
+
+  it("ventas sin coste pero SIN missing del TPV → CTA al Resumen a secas (el panel abriría vacío)", () => {
+    const { step } = byId(base({
+      margin: { source: "pos", hasSales: true, hasRecipes: true, topProduct: null, pos: pos() },
+    }));
+    expect(step.link.state).toBe("pendiente");
+    expect(step.link.cta?.action).toBe("summary");
   });
 
   it("POS sin missing y con coste → link completado; sin estimados quick-cost dice que no hace falta", () => {
