@@ -70,7 +70,9 @@ function ruleMatches(movement: MovementForClassify, rule: TreasuryRule): boolean
 }
 
 function matcherPasses(movement: MovementForClassify, m: Matcher): boolean {
-  const text = fieldText(movement, m.field).toLowerCase();
+  // Normaliza espacios múltiples: los extractos BBVA traen dobles espacios
+  // ("GENERAL RISK  PREVENTION") que rompían los keywordsAny (includes exacto).
+  const text = fieldText(movement, m.field).toLowerCase().replace(/\s+/g, " ").trim();
   if (!text) return false;
 
   if (m.keywordsAny && m.keywordsAny.length > 0) {
