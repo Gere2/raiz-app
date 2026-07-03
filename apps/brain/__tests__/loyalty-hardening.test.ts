@@ -39,8 +39,8 @@ describe("PR5 — Org Isolation", () => {
   })
 
   it("profile with mismatched orgId should be rejected", () => {
-    const profileOrgId = "org-cafe-1"
-    const requestOrgId = "org-cafe-2"
+    const profileOrgId: string = "org-cafe-1"
+    const requestOrgId: string = "org-cafe-2"
     const isAllowed = profileOrgId === requestOrgId
     expect(isAllowed).toBe(false)
   })

@@ -20,7 +20,7 @@ export async function POST(req: Request, { params }: Params) {
     const body = await req.json().catch(() => ({}));
 
     // Get movements to categorize
-    let movementIds = body.movementIds as string[] | undefined;
+    const movementIds = body.movementIds as string[] | undefined;
     let movements: Array<{ id: string; concept: string; amount: number; date: string }>;
 
     if (movementIds && movementIds.length > 0) {

@@ -655,7 +655,7 @@ export default function CustomersSection({ user, orgId }: CustomersSectionProps)
           <div style={{ padding: 24, textAlign: "center", color: T.dim }}>Cargando...</div>
         ) : displayed.length === 0 ? (
           <div style={{ padding: 24, textAlign: "center", color: T.dim }}>
-            No hay clientes. Si acabas de configurar la app, pulsa "Sincronizar clientes" para importar los perfiles existentes.
+            No hay clientes. Si acabas de configurar la app, pulsa &ldquo;Sincronizar clientes&rdquo; para importar los perfiles existentes.
           </div>
         ) : (
           displayed.map(c => {

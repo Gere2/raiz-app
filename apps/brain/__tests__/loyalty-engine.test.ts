@@ -177,8 +177,10 @@ describe("Targeting — Pure Logic", () => {
 
   const baseCtx = {
     uid: "user-1",
-    segment: "regular" as const,
-    levelId: "raiz" as const,
+    // Tipados con la unión real (no `as const`): los tests de abajo comparan
+    // contra OTROS literales de la unión y con literales sueltos TS2367.
+    segment: "regular" as import("@/lib/targeting").CustomerSegment,
+    levelId: "raiz" as import("@/lib/targeting").LevelId,
     traits: ["explorador", "curioso"] as any[],
     totalPurchases: 15,
     completedQuizzes: ["welcome-profile", "welcome-specialty"],

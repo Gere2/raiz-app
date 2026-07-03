@@ -279,7 +279,7 @@ REGLAS:
     { role: "user", content: [documentBlock, { type: "text", text: prompt }] },
   ], 16384);
 
-  let textBlock = claudeData.content?.find(
+  const textBlock = claudeData.content?.find(
     (b: { type: string }) => b.type === "text"
   );
 

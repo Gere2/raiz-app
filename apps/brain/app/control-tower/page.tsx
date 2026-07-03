@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
 import { onAuthStateChanged, type User } from "firebase/auth"
 import { auth } from "../../lib/firebase"
 import { signInWithGoogle, consumeRedirectResult } from "../../lib/auth-client"
@@ -138,9 +139,9 @@ export default function ControlTowerPage() {
             >
               {metricsLoading ? "..." : "↻ Actualizar"}
             </button>
-            <a href="/" style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.border}`, background: "transparent", color: T.muted, fontSize: 12, textDecoration: "none", cursor: "pointer" }}>
+            <Link href="/" style={{ padding: "6px 12px", borderRadius: 6, border: `1px solid ${T.border}`, background: "transparent", color: T.muted, fontSize: 12, textDecoration: "none", cursor: "pointer" }}>
               ← Brain
-            </a>
+            </Link>
           </div>
         </div>
 

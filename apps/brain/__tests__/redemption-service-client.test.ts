@@ -23,8 +23,8 @@ describe("redemption-service-client (Brain API client)", () => {
       getIdToken: vi.fn().mockResolvedValue("mock-token-xyz"),
     }
 
-    // Reset env var
-    process.env.NEXT_PUBLIC_BRAIN_API_URL = "https://brain-api.example.com"
+    // El cliente llama proxies same-origin del POS (rutas relativas que
+    // reenvían al Brain server-side, evitando CORS) — no usa base URL.
   })
 
   afterEach(() => {
@@ -62,7 +62,7 @@ describe("redemption-service-client (Brain API client)", () => {
 
       expect(global.fetch).toHaveBeenCalledTimes(1)
       const [url, init] = vi.mocked(global.fetch).mock.calls[0]
-      expect(url).toBe("https://brain-api.example.com/api/org/org-001/loyalty/redemption-validate")
+      expect(url).toBe("/api/org/org-001/loyalty/redemption-validate")
       expect(init?.method).toBe("POST")
       expect(init?.body).toBe(JSON.stringify({ code: "ABC123" }))
       // Headers is a Headers object, check via .get()
@@ -179,7 +179,7 @@ describe("redemption-service-client (Brain API client)", () => {
 
       expect(global.fetch).toHaveBeenCalledTimes(1)
       const [url, init] = vi.mocked(global.fetch).mock.calls[0]
-      expect(url).toBe("https://brain-api.example.com/api/org/org-001/loyalty/redemption-use")
+      expect(url).toBe("/api/org/org-001/loyalty/redemption-use")
       expect(init?.method).toBe("POST")
       expect(init?.body).toBe(JSON.stringify({ redemptionId: "red-001" }))
       const headers = init?.headers as Headers

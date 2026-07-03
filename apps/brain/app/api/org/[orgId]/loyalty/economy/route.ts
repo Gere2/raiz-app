@@ -51,7 +51,7 @@ export async function GET(
   const to = req.nextUrl.searchParams.get("to") || null
 
   // ── 1. Aggregate loyalty_transactions ──
-  let txQuery = adminDb
+  const txQuery = adminDb
     .collection("loyalty_transactions")
     .where("orgId", "==", orgId)
     .where("status", "==", "completed")
