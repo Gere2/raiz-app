@@ -5,8 +5,14 @@
  * Solo se inicializa cuando una API route lo necesita, no al importar.
  *
  * Inicialización:
- *   1. Si GOOGLE_APPLICATION_CREDENTIALS apunta a tu JSON → usa applicationDefault()
- *   2. Si FIREBASE_ADMIN_JSON está en .env.local → parsea y usa cert()
+ *   1. Si FIREBASE_ADMIN_JSON está en .env.local / Vercel → parsea y usa cert()
+ *   2. Si GOOGLE_APPLICATION_CREDENTIALS apunta a tu JSON → applicationDefault()
+ *
+ * cert() va PRIMERO a propósito: con applicationDefault(), firebase-admin 13
+ * firma los custom tokens vía la API de IAM (signBlob) aunque el fichero ADC
+ * tenga private key — y esa API está deshabilitada en el proyecto. cert() firma
+ * en local. Un GOOGLE_APPLICATION_CREDENTIALS ambiental (p. ej. en ~/.zshrc)
+ * rompía /api/enverde/provision en dev al ganarle la carrera al JSON inline.
  *
  * Exporta: db (Firestore), adminAuth (Auth), FieldValue
  */
@@ -27,13 +33,8 @@ function getAdminApp(): App {
   }
   if (_app) return _app;
 
-  // Opción A: GOOGLE_APPLICATION_CREDENTIALS (recomendado en local)
-  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    _app = initializeApp({ credential: applicationDefault() });
-    return _app;
-  }
-
-  // Opción B: JSON inline en .env.local (útil en Vercel)
+  // Opción A: JSON inline (Vercel y local). cert() firma custom tokens en
+  // local sin depender de la API de IAM — ver nota del encabezado.
   const json = process.env.FIREBASE_ADMIN_JSON;
   if (json) {
     let sa;
@@ -43,6 +44,12 @@ function getAdminApp(): App {
       throw new Error("Firebase Admin: FIREBASE_ADMIN_JSON contiene JSON inválido. Verifica el formato.");
     }
     _app = initializeApp({ credential: cert(sa) });
+    return _app;
+  }
+
+  // Opción B (fallback): GOOGLE_APPLICATION_CREDENTIALS ambiental
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    _app = initializeApp({ credential: applicationDefault() });
     return _app;
   }
 

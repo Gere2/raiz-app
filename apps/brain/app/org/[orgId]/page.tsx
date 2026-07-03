@@ -26,7 +26,9 @@ import ProfitabilityDemo from "@/app/components/sections/ProfitabilityDemo";
 import CommunityHubCard from "@/app/components/sections/CommunityHubCard";
 import { trackActivation } from "@/lib/track-activation";
 
-const ACCENT = "#3F6B2E";
+/* Token del tema (claro/oscuro por marca) — nunca hardcodear el verde:
+ * #3F6B2E era ilegible sobre el fondo oscuro de Enverde. */
+const ACCENT = "var(--t-accent)";
 
 export default function OrgHubPage() {
   const params = useParams<{ orgId: string }>();
@@ -115,7 +117,7 @@ export default function OrgHubPage() {
       <a
         href={`/org/${orgId}/treasury/start`}
         onClick={() => trackActivation(user, orgId, "cta_upload_statement_clicked", "hub")}
-        className="mt-8 block rounded-2xl border p-6 transition"
+        className="hub-card mt-8 block rounded-2xl border p-6 transition"
         style={{ borderColor: "var(--t-accent)", background: "var(--t-accent-light)" }}
       >
         <Badge tone="now">Disponible ahora</Badge>
@@ -245,7 +247,7 @@ function ActionCard({
   onClick?: (e: React.MouseEvent<HTMLAnchorElement>) => void;
 }) {
   return (
-    <a href={href} onClick={onClick} className="block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
+    <a href={href} onClick={onClick} className="hub-card block rounded-xl border p-5 transition" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>
       <Badge tone="now">{state}</Badge>
       <h3 className="mt-3 text-base font-bold" style={{ color: "var(--t-text)" }}>
         {title}
@@ -268,11 +270,11 @@ function Badge({ tone, children }: { tone: "now" | "soon"; children: ReactNode }
       className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold"
       style={
         now
-          ? { background: ACCENT, color: "#fff" }
+          ? { background: ACCENT, color: "var(--t-on-accent)" }
           : { background: "var(--t-accent-light)", color: "var(--t-muted)" }
       }
     >
-      <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: now ? "#fff" : "var(--t-muted)" }} />
+      <span aria-hidden style={{ width: 6, height: 6, borderRadius: "50%", background: now ? "var(--t-on-accent)" : "var(--t-muted)" }} />
       {children}
     </span>
   );

@@ -13,7 +13,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { authedFetch } from "@/lib/authed-fetch";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
 
 type Status = { configured: boolean; last4: string | null };
 
@@ -115,7 +115,7 @@ export default function AnthropicKeyPage() {
         enverde · ajustes
       </p>
       <h1 className="mt-2 text-2xl font-black">Tu clave de IA (Anthropic)</h1>
-      <p className="mt-2 text-gray-600">
+      <p className="mt-2" style={{ color: "var(--t-muted)" }}>
         Enverde usa esta clave para leer tu banco y calcular tu sueldo. Es tuya: pagas tu propio
         consumo y tus datos van con tu cuenta. La guardamos cifrada y no volvemos a mostrarla.
       </p>
@@ -123,13 +123,13 @@ export default function AnthropicKeyPage() {
       {status?.configured && (
         <div
           className="mt-5 rounded-xl border p-4 text-sm"
-          style={{ borderColor: ACCENT, color: ACCENT, background: "#E7F1E1" }}
+          style={{ borderColor: ACCENT, color: ACCENT, background: "var(--t-accent-light)" }}
         >
           ✓ Clave conectada{status.last4 ? ` (termina en ····${status.last4})` : ""}.
         </div>
       )}
 
-      <label className="mt-6 text-sm font-semibold text-gray-700">
+      <label className="mt-6 text-sm font-semibold" style={{ color: "var(--t-text)" }}>
         {status?.configured ? "Reemplazar clave" : "Pega tu clave"}
       </label>
       <input
@@ -139,34 +139,35 @@ export default function AnthropicKeyPage() {
         value={keyInput}
         onChange={(e) => setKeyInput(e.target.value)}
         placeholder="sk-ant-…"
-        className="mt-2 rounded-xl border border-gray-300 px-4 py-3 font-mono text-sm outline-none focus:border-gray-500"
+        className="mt-2 rounded-xl border px-4 py-3 font-mono text-sm outline-none"
+        style={{ borderColor: "var(--t-border)", background: "var(--t-surface)", color: "var(--t-text)" }}
       />
 
       <button
         type="button"
         disabled={busy || keyInput.trim().length < 10}
         onClick={save}
-        className="mt-4 rounded-xl px-5 py-4 text-base font-bold text-white disabled:opacity-60"
-        style={{ background: ACCENT }}
+        className="mt-4 rounded-xl px-5 py-4 text-base font-bold disabled:opacity-60"
+        style={{ background: ACCENT, color: "var(--t-on-accent)" }}
       >
         {busy ? "Guardando…" : "Guardar clave"}
       </button>
 
       {saved && <p className="mt-3 text-sm font-medium" style={{ color: ACCENT }}>Guardada. Ya puedes seguir con tu diagnóstico.</p>}
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
+      {error && <p className="mt-3 text-sm" style={{ color: "var(--t-danger)" }}>{error}</p>}
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <a href={`/org/${orgId}/treasury/start`} className="text-sm font-semibold underline" style={{ color: ACCENT }}>
           ← Volver a subir el extracto
         </a>
         {status?.configured && (
-          <button type="button" onClick={remove} disabled={busy} className="text-sm text-gray-500 underline disabled:opacity-60">
+          <button type="button" onClick={remove} disabled={busy} className="text-sm underline disabled:opacity-60" style={{ color: "var(--t-dim)" }}>
             Borrar clave
           </button>
         )}
       </div>
 
-      <p className="mt-8 text-xs text-gray-400">
+      <p className="mt-8 text-xs" style={{ color: "var(--t-dim)" }}>
         ¿No tienes clave? Puedes crear una en console.anthropic.com → API Keys. Anthropic puede
         cobrarte según su propia tarifa por el consumo del análisis.
       </p>
@@ -176,7 +177,7 @@ export default function AnthropicKeyPage() {
 
 function Centered({ children }: { children: ReactNode }) {
   return (
-    <main className="flex min-h-screen flex-col items-center justify-center gap-1 px-6 text-center text-gray-700">
+    <main className="flex min-h-screen flex-col items-center justify-center gap-1 px-6 text-center" style={{ color: "var(--t-muted)" }}>
       {children}
     </main>
   );

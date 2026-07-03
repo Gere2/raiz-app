@@ -93,10 +93,10 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
       </p>
 
       {ready && (
-        <div className="mt-3 rounded-xl border px-4 py-2.5 text-sm font-semibold" style={{ borderColor: "#86efac", background: "#f0fdf4", color: "#15803d" }}>
+        <div className="mt-3 rounded-xl border px-4 py-2.5 text-sm font-semibold" style={{ borderColor: "var(--t-success-20)", background: "var(--t-success-bg)", color: "var(--t-success)" }}>
           Ya tienes una base suficiente para leer el mes.
           {completed < total && (
-            <span className="font-normal" style={{ color: "#166534" }}>
+            <span className="font-normal" style={{ color: "var(--t-success)" }}>
               {" "}Los pasos que quedan la afinan.
             </span>
           )}
@@ -114,9 +114,9 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
                 className="mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-xs font-bold"
                 style={
                   done
-                    ? { background: "var(--t-accent)", color: "#fff" }
+                    ? { background: "var(--t-accent)", color: "var(--t-on-accent)" }
                     : attention
-                      ? { background: "#fef3c7", border: "1.5px solid #f59e0b", color: "#92400e" }
+                      ? { background: "var(--t-warning-bg)", border: "1.5px solid var(--t-warning)", color: "var(--t-warning)" }
                       : { border: "1.5px solid var(--t-border)", color: "var(--t-dim)" }
                 }
               >
@@ -133,7 +133,7 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
                       done
                         ? { background: "var(--t-accent-14)", color: "var(--t-accent)" }
                         : attention
-                          ? { background: "#fef3c7", color: "#92400e" }
+                          ? { background: "var(--t-warning-bg)", color: "var(--t-warning)" }
                           : { background: "var(--t-accent-08)", color: "var(--t-dim)" }
                     }
                   >
@@ -145,15 +145,15 @@ export default function ProfitabilityOnboarding({ user, orgId, authedFetch }: Pr
                 </span>
               </span>
               {st.cta && (
-                <span aria-hidden className="mt-1 shrink-0 text-xs font-bold" style={{ color: attention ? "#92400e" : "var(--t-accent)" }}>
+                <span aria-hidden className="mt-1 shrink-0 text-xs font-bold" style={{ color: attention ? "var(--t-warning)" : "var(--t-accent)" }}>
                   {st.cta.label} →
                 </span>
               )}
             </>
           );
           const rowStyle = {
-            borderColor: attention ? "#fde68a" : "var(--t-border)",
-            background: attention ? "#fffbeb" : "var(--t-bg)",
+            borderColor: attention ? "var(--t-warning-20)" : "var(--t-border)",
+            background: attention ? "var(--t-warning-bg)" : "var(--t-bg)",
             opacity: st.state === "pendiente" && !st.cta ? 0.75 : 1,
           };
           return (

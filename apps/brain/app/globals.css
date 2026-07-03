@@ -26,11 +26,16 @@
   --t-accent-14: rgba(63, 107, 46, 0.08);
   --t-accent-10: rgba(63, 107, 46, 0.06);
   --t-accent-08: rgba(63, 107, 46, 0.03);
+  /* Texto sobre superficies rellenas de acento (botones, badges). En claro el
+   * acento es oscuro → texto blanco; en oscuro el acento es claro → texto casi
+   * negro. Nunca hardcodear "#fff" junto a background acento. */
+  --t-on-accent: #ffffff;
   --t-success: #15803d;
   --t-success-bg: #f0fdf4;
   --t-success-20: rgba(21, 128, 61, 0.13);
   --t-warning: #a16207;
   --t-warning-bg: #fefce8;
+  --t-warning-20: rgba(245, 158, 11, 0.4);
   --t-danger: #b91c1c;
   --t-danger-bg: #fef2f2;
   --t-danger-20: rgba(185, 28, 28, 0.13);
@@ -72,11 +77,13 @@
   --t-accent-14: rgba(127, 176, 105, 0.10);
   --t-accent-10: rgba(127, 176, 105, 0.07);
   --t-accent-08: rgba(127, 176, 105, 0.04);
+  --t-on-accent: #0D1408;
   --t-success: #4ADE80;
   --t-success-bg: rgba(74, 222, 128, 0.12);
   --t-success-20: rgba(74, 222, 128, 0.18);
   --t-warning: #FBBF24;
   --t-warning-bg: rgba(251, 191, 36, 0.12);
+  --t-warning-20: rgba(251, 191, 36, 0.35);
   --t-danger: #F87171;
   --t-danger-bg: rgba(248, 113, 113, 0.12);
   --t-danger-20: rgba(248, 113, 113, 0.18);
@@ -146,6 +153,12 @@ nav::-webkit-scrollbar-thumb:hover {
 /* Table row hover */
 tr[style]:hover {
   background: var(--t-row-hover) !important;
+}
+
+/* Tarjetas-enlace del hub: affordance de hover (borde acento + leve lift) */
+.hub-card:hover {
+  border-color: var(--t-accent-40) !important;
+  transform: translateY(-1px);
 }
 
 /* Button hover helpers */

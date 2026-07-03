@@ -20,7 +20,8 @@ import { auth } from "@/lib/firebase";
 import { authedFetch } from "@/lib/authed-fetch";
 import { useBrand } from "./brand-context";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
+const ON_ACCENT = "var(--t-on-accent)";
 
 export default function CommunityNav() {
   const brand = useBrand();
@@ -69,7 +70,7 @@ export default function CommunityNav() {
         padding: "12px 18px",
         borderRadius: 999,
         background: ACCENT,
-        color: "#fff",
+        color: ON_ACCENT,
         textDecoration: "none",
         fontWeight: 700,
         fontSize: 14,
@@ -88,7 +89,7 @@ export default function CommunityNav() {
             height: 20,
             padding: "0 6px",
             borderRadius: 999,
-            background: "#fff",
+            background: ON_ACCENT,
             color: ACCENT,
             fontSize: 12,
             fontWeight: 800,

@@ -27,6 +27,8 @@ export const T = {
   accent: "var(--t-accent)",
   accentLight: "var(--t-accent-light)",
   accentMid: "var(--t-accent-mid)",
+  /* Texto sobre fondos de acento (botones/badges rellenos) */
+  onAccent: "var(--t-on-accent)",
   /* Brand — tints translúcidos (reemplazan T.accent + "NN") */
   accent40: "var(--t-accent-40)",
   accent14: "var(--t-accent-14)",
@@ -84,7 +86,7 @@ export const kpiVal: React.CSSProperties = { fontFamily: T.mono, fontSize: 22, f
 export const input: React.CSSProperties = { padding: "10px 14px", borderRadius: 10, border: `1px solid ${T.border}`, background: T.surface, color: T.text, fontFamily: T.font, fontSize: 14, outline: "none", boxSizing: "border-box", transition: "border-color 0.15s, box-shadow 0.15s" };
 
 /* Buttons */
-export const btnPrimary: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10, border: "none", background: T.accent, color: "#fff", fontFamily: T.font, fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "background 0.15s, transform 0.1s", letterSpacing: "-0.01em" };
+export const btnPrimary: React.CSSProperties = { display: "inline-flex", alignItems: "center", gap: 8, padding: "10px 20px", borderRadius: 10, border: "none", background: T.accent, color: T.onAccent, fontFamily: T.font, fontSize: 14, fontWeight: 600, cursor: "pointer", transition: "background 0.15s, transform 0.1s", letterSpacing: "-0.01em" };
 export const btnSmall: React.CSSProperties = { padding: "7px 14px", borderRadius: 8, border: `1px solid ${T.border}`, background: T.surface, color: T.muted, fontFamily: T.font, fontSize: 13, cursor: "pointer", transition: "all 0.15s", fontWeight: 500 };
 export const btnGhost: React.CSSProperties = { padding: 8, borderRadius: 8, border: "none", background: "transparent", color: T.dim, cursor: "pointer", fontSize: 14, fontFamily: T.font, transition: "color 0.15s, background 0.15s" };
 

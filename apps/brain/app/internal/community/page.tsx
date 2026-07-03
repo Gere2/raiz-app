@@ -17,7 +17,7 @@ import { signInWithGoogle, consumeRedirectResult } from "@/lib/auth-client";
 import { authedFetch } from "@/lib/authed-fetch";
 import { topicEmoji, topicLabel, type CommunityReportGroup } from "@/lib/community";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
 
 export default function InternalCommunityPage() {
   const [user, setUser] = useState<User | null>(null);
@@ -98,8 +98,8 @@ export default function InternalCommunityPage() {
         <p className="text-sm">Inicia sesión con tu cuenta del equipo.</p>
         <button
           onClick={() => signInWithGoogle()}
-          className="mt-4 rounded-xl px-5 py-2.5 text-sm font-bold text-white"
-          style={{ background: ACCENT }}
+          className="mt-4 rounded-xl px-5 py-2.5 text-sm font-bold"
+          style={{ background: ACCENT, color: "var(--t-on-accent)" }}
         >
           Entrar con Google
         </button>

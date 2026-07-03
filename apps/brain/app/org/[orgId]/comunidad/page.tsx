@@ -27,7 +27,8 @@ import {
   type Topic,
 } from "@/lib/community";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
+const ON_ACCENT = "var(--t-on-accent)";
 type TabId = "all" | Topic;
 
 export default function ComunidadPage() {
@@ -148,7 +149,7 @@ export default function ComunidadPage() {
               <button
                 key={p.id}
                 onClick={() => setSelectedId(p.id)}
-                className="rounded-2xl border p-4 text-left transition"
+                className="hub-card rounded-2xl border p-4 text-left transition"
                 style={{ borderColor: "var(--t-accent)", background: "var(--t-accent-light)" }}
               >
                 <span className="text-xs font-bold" style={{ color: "var(--t-accent)" }}>
@@ -177,7 +178,7 @@ export default function ComunidadPage() {
           <button
             onClick={() => setComposerOpen((v) => !v)}
             className="rounded-full px-4 py-2 text-sm font-bold transition"
-            style={{ background: ACCENT, color: "#fff" }}
+            style={{ background: ACCENT, color: ON_ACCENT }}
           >
             {composerOpen ? "Cerrar" : "Hacer una pregunta"}
           </button>
@@ -230,7 +231,7 @@ export default function ComunidadPage() {
             <button
               key={p.id}
               onClick={() => setSelectedId(p.id)}
-              className="rounded-xl border p-4 text-left transition"
+              className="hub-card rounded-xl border p-4 text-left transition"
               style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}
             >
               <div className="flex items-center gap-2 text-xs" style={{ color: "var(--t-dim)" }}>
@@ -360,7 +361,7 @@ function Composer({
           onClick={submit}
           disabled={submitting}
           className="rounded-full px-5 py-2 text-sm font-bold transition disabled:opacity-60"
-          style={{ background: ACCENT, color: "#fff" }}
+          style={{ background: ACCENT, color: ON_ACCENT }}
         >
           {submitting ? "Publicando…" : "Publicar"}
         </button>
@@ -617,7 +618,7 @@ function PostDetail({
                   onClick={send}
                   disabled={sending || !reply.trim()}
                   className="rounded-full px-5 py-2 text-sm font-bold transition disabled:opacity-60"
-                  style={{ background: ACCENT, color: "#fff" }}
+                  style={{ background: ACCENT, color: ON_ACCENT }}
                 >
                   {sending ? "Enviando…" : "Responder"}
                 </button>
@@ -639,7 +640,7 @@ function TabPill({ active, onClick, children }: { active: boolean; onClick: () =
       className="rounded-full px-3 py-1.5 text-sm font-semibold transition"
       style={
         active
-          ? { background: ACCENT, color: "#fff" }
+          ? { background: ACCENT, color: ON_ACCENT }
           : { background: "var(--t-surface)", color: "var(--t-muted)", border: "1px solid var(--t-border)" }
       }
     >

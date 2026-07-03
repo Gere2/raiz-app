@@ -52,7 +52,7 @@ type Props = {
  */
 export const RESUMEN_VINCULAR_HASH = "#resumen-rentabilidad:vincular";
 
-const SEMAFORO_COLOR: Record<string, string> = { verde: "#16a34a", amarillo: "#ca8a04", rojo: "#dc2626" };
+const SEMAFORO_COLOR: Record<string, string> = { verde: "var(--t-success)", amarillo: "var(--t-warning)", rojo: "var(--t-danger)" };
 
 export default function ProfitabilitySummary({ user, orgId, authedFetch, variant = "margins" }: Props) {
   const hub = variant === "hub";
@@ -122,9 +122,9 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
   const insights = computeProfitabilityInsights({ cash, margin, period: data.period });
 
   const SOURCE_CHIP: Record<string, { label: string; bg: string; color: string } | undefined> = {
-    pos: { label: "Ventas reales del TPV", bg: "#dcfce7", color: "#15803d" },
-    manual: { label: "Ventas manuales", bg: "#fef9c3", color: "#a16207" },
-    estimate: { label: "Estimación por escandallo", bg: "#e0e7ff", color: "#4338ca" },
+    pos: { label: "Ventas reales del TPV", bg: "var(--t-success-bg)", color: "var(--t-success)" },
+    manual: { label: "Ventas manuales", bg: "var(--t-warning-bg)", color: "var(--t-warning)" },
+    estimate: { label: "Estimación por escandallo", bg: "var(--t-info-bg)", color: "var(--t-info)" },
   };
   const chip = SOURCE_CHIP[source];
 
@@ -138,7 +138,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
           </span>
         )}
         {(margin.estimatedCosts?.count ?? 0) > 0 && (
-          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "#fef3c7", color: "#92400e" }}>
+          <span style={{ fontSize: 11, fontWeight: 700, padding: "3px 10px", borderRadius: 999, background: "var(--t-warning-bg)", color: "var(--t-warning)" }}>
             Margen con costes estimados
           </span>
         )}
@@ -180,7 +180,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         <Card label={source === "pos" ? "Margen bruto del mes" : "Margen bruto estimado"}>
           {margin.hasSales ? (
             <>
-              <div style={{ fontSize: 22, fontWeight: 800, color: "#16a34a" }}>{fmt(margin.grossMarginMonth)}€</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: "var(--t-success)" }}>{fmt(margin.grossMarginMonth)}€</div>
               <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
                 {source === "pos" && margin.pos
                   ? `ventas reales del TPV · ${fmt(margin.pos.revenue)}€ vendidos`
@@ -226,7 +226,7 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
         <Card label="Productos a revisar">
           {margin.topProduct ? (
             <>
-              <div style={{ fontSize: 22, fontWeight: 800, color: margin.toReview.count > 0 ? "#dc2626" : "#16a34a" }}>{margin.toReview.count}</div>
+              <div style={{ fontSize: 22, fontWeight: 800, color: margin.toReview.count > 0 ? "var(--t-danger)" : "var(--t-success)" }}>{margin.toReview.count}</div>
               <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
                 {margin.toReview.count > 0 ? margin.toReview.names.join(", ") : "margen sano"}
               </div>
@@ -278,11 +278,14 @@ export default function ProfitabilitySummary({ user, orgId, authedFetch, variant
 
 /* ── Lectura rápida ── */
 
+/* Tokens del tema: en Raíz (claro) equivalen a la paleta pastel original; en
+ * Enverde (oscuro) son tints oscuros — antes eran cajas blancas hardcodeadas
+ * que rompían el tema. */
 const SEVERITY_STYLE: Record<Insight["severity"], { border: string; bg: string; title: string }> = {
-  good: { border: "#86efac", bg: "#f0fdf4", title: "#15803d" },
-  warning: { border: "#fde68a", bg: "#fffbeb", title: "#92400e" },
-  action: { border: "#fcd34d", bg: "#fef3c7", title: "#92400e" },
-  info: { border: "#e5e7eb", bg: "#fafafa", title: "#374151" },
+  good: { border: "var(--t-success-20)", bg: "var(--t-success-bg)", title: "var(--t-success)" },
+  warning: { border: "var(--t-warning-20)", bg: "var(--t-warning-bg)", title: "var(--t-warning)" },
+  action: { border: "var(--t-warning)", bg: "var(--t-warning-bg)", title: "var(--t-warning)" },
+  info: { border: "var(--t-border)", bg: "var(--t-surface-hover)", title: "var(--t-muted)" },
 };
 
 /**
@@ -464,17 +467,17 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
   );
 
   return (
-    <div style={{ marginTop: 12, borderTop: "1px solid #fcd34d", paddingTop: 12 }}>
-      {error && <div style={{ fontSize: 12, color: "#dc2626", marginBottom: 8 }}>{error}</div>}
+    <div style={{ marginTop: 12, borderTop: "1px solid var(--t-warning-20)", paddingTop: 12 }}>
+      {error && <div style={{ fontSize: 12, color: "var(--t-danger)", marginBottom: 8 }}>{error}</div>}
       {products.length === 0 && (
         <div style={{ fontSize: 12 }}>No hay detalle de productos disponible. Recarga la página.</div>
       )}
       {products.map((p) => {
         const busy = busyId === p.productId;
         return (
-          <div key={p.productId} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid #fde68a" }}>
+          <div key={p.productId} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "8px 0", borderBottom: "1px solid var(--t-warning-20)" }}>
             <div style={{ minWidth: 180, flex: "1 1 180px" }}>
-              <div style={{ fontWeight: 700, color: "#78350f" }}>{p.name}</div>
+              <div style={{ fontWeight: 700, color: "var(--t-text)" }}>{p.name}</div>
               <div style={{ fontSize: 11 }}>{p.unitsSold} uds · {fmt(p.revenue)}€ este mes</div>
             </div>
             {p.linkedRecipeId ? (
@@ -488,7 +491,7 @@ function LinkMissingProducts({ user, orgId, authedFetch, products, onChanged }: 
                 >
                   {busy ? "Guardando…" : "Guardar coste aprox."}
                 </button>
-                <Link href="/?section=recipes" style={{ color: "#92400e", fontWeight: 700, textDecoration: "underline" }}>
+                <Link href="/?section=recipes" style={{ color: "var(--t-warning)", fontWeight: 700, textDecoration: "underline" }}>
                   Completar ingredientes →
                 </Link>
               </div>

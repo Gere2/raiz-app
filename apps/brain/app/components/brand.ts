@@ -9,7 +9,9 @@
  * Default = Raíz, así que Raíz no se ve afectada. Mismo criterio que layout.tsx.
  */
 
-export const ENVERDE_HOSTS = new Set(["app.enverde.app", "www.enverde.app"]);
+/* app.enverde.localhost: alias de desarrollo — los dominios *.localhost
+ * resuelven a 127.0.0.1, permitiendo ver la marca Enverde en `next dev`. */
+export const ENVERDE_HOSTS = new Set(["app.enverde.app", "www.enverde.app", "app.enverde.localhost"]);
 
 export function isEnverdeHost(host?: string | null): boolean {
   if (!host) return false;

@@ -106,7 +106,7 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
     <section style={{ ...tableWrap, padding: 24, marginTop: 20, background: T.accent14, borderColor: T.accent40 }}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10 }}>
         <h2 style={{ fontSize: 20, fontWeight: 900, color: T.text, margin: 0 }}>Cafetería demo</h2>
-        <span style={{ borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700, background: T.accent, color: "#fff" }}>
+        <span style={{ borderRadius: 999, padding: "3px 10px", fontSize: 11, fontWeight: 700, background: T.accent, color: T.onAccent }}>
           Datos de ejemplo
         </span>
       </div>
@@ -122,12 +122,12 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
         <Card label="Sueldo recomendado (ejemplo)">
           <div style={{ fontSize: 22, fontWeight: 800, color: T.text }}>{fmt(DEMO_SUELDO.recomendado)}€</div>
           <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
-            <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 5, background: "#16a34a" }} />
+            <span style={{ display: "inline-block", width: 7, height: 7, borderRadius: "50%", marginRight: 5, background: "var(--t-success)" }} />
             máx. sostenible {fmt(DEMO_SUELDO.maximo)}€ · cifra de ejemplo
           </div>
         </Card>
         <Card label="Margen bruto estimado">
-          <div style={{ fontSize: 22, fontWeight: 800, color: "#16a34a" }}>{fmt(grossMonth)}€</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "var(--t-success)" }}>{fmt(grossMonth)}€</div>
           <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>este mes, según las ventas demo</div>
         </Card>
         <Card label="Producto que más aporta">
@@ -135,7 +135,7 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
           <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>{fmt(top.gross)}€ de margen</div>
         </Card>
         <Card label="Productos a revisar">
-          <div style={{ fontSize: 22, fontWeight: 800, color: toReview.length > 0 ? "#dc2626" : "#16a34a" }}>{toReview.length}</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: toReview.length > 0 ? "var(--t-danger)" : "var(--t-success)" }}>{toReview.length}</div>
           <div style={{ fontSize: 11, color: T.dim, marginTop: 2 }}>
             {toReview.length > 0 ? toReview.map((r) => r.name).join(", ") : "margen sano"}
           </div>
@@ -167,7 +167,7 @@ export default function ProfitabilityDemo({ user, orgId, authedFetch }: Props) {
                 <td style={{ ...cell, fontWeight: 700, color: T.text }}>{fmt(r.gross)}€</td>
                 <td style={{ ...cell, textAlign: "left" }}>
                   {r.review && (
-                    <span style={{ borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700, background: "#fee2e2", color: "#dc2626" }}>
+                    <span style={{ borderRadius: 999, padding: "2px 8px", fontSize: 11, fontWeight: 700, background: "var(--t-danger-bg)", color: "var(--t-danger)" }}>
                       revisar
                     </span>
                   )}

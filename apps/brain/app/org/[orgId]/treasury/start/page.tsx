@@ -16,7 +16,7 @@ import { onAuthStateChanged, type User } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { authedFetch } from "@/lib/authed-fetch";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
 
 // Handoff al TPV encendido para el piloto (2026-06-10: ventas reales pesan más
 // que la coherencia de marca). El TPV vive en pos.raizygrano.com hasta que
@@ -177,8 +177,8 @@ export default function TreasuryStartPage() {
         </p>
         <a
           href={`/org/${orgId}/settings/anthropic`}
-          className="mt-6 rounded-xl px-5 py-4 text-center text-base font-bold text-white"
-          style={{ background: ACCENT }}
+          className="mt-6 rounded-xl px-5 py-4 text-center text-base font-bold"
+          style={{ background: ACCENT, color: "var(--t-on-accent)" }}
         >
           Conectar mi clave de Anthropic →
         </a>
@@ -208,8 +208,8 @@ export default function TreasuryStartPage() {
         <h1 className="mt-2 text-2xl font-black">Esto es lo que dice tu mes</h1>
 
         <section
-          className="mt-6 rounded-2xl p-6 text-white"
-          style={{ background: ACCENT }}
+          className="mt-6 rounded-2xl p-6"
+          style={{ background: ACCENT, color: "var(--t-on-accent)" }}
         >
           <p className="text-xs font-semibold uppercase tracking-wider opacity-80">
             Tu sueldo recomendado
@@ -288,8 +288,8 @@ export default function TreasuryStartPage() {
         type="button"
         disabled={busy}
         onClick={() => fileRef.current?.click()}
-        className="mt-6 rounded-xl px-5 py-4 text-base font-bold text-white disabled:opacity-70"
-        style={{ background: ACCENT }}
+        className="mt-6 rounded-xl px-5 py-4 text-base font-bold disabled:opacity-70"
+        style={{ background: ACCENT, color: "var(--t-on-accent)" }}
       >
         {phase === "extracting"
           ? "Leyendo tu extracto…"

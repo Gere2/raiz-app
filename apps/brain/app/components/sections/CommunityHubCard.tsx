@@ -11,7 +11,7 @@ import { useCallback, useEffect, useState } from "react";
 import type { User } from "firebase/auth";
 import { topicEmoji, topicLabel, type CommunityPost } from "@/lib/community";
 
-const ACCENT = "#3F6B2E";
+const ACCENT = "var(--t-accent)";
 
 export default function CommunityHubCard({
   user,
@@ -136,7 +136,7 @@ export default function CommunityHubCard({
       <a
         href={href}
         className="mt-5 inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-bold transition"
-        style={{ background: ACCENT, color: "#fff" }}
+        style={{ background: ACCENT, color: "var(--t-on-accent)" }}
       >
         Entrar a la comunidad
         <span aria-hidden>→</span>
