@@ -18,5 +18,8 @@
   "dependencies": {
     "firebase": "12.9.0",
     "tinyexec": "^1.0.4"
+  },
+  "engines": {
+    "node": ">=20.12"
   }
 }

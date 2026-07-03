@@ -1,0 +1,33 @@
+# CI mínimo (auditoría 2026-07-03, backlog #7): red de seguridad, NO deploy.
+# El deploy sigue siendo manual por Vercel CLI (decisión en AGENT_DECISIONS.md).
+# Alcance: apps/brain (la app con tests). Ampliar a pos/app tras su upgrade de Next.
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  brain:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: ".nvmrc"
+          cache: npm
+
+      - name: Install (workspaces raíz)
+        run: npm ci
+
+      - name: Lint (brain)
+        run: npm run lint --workspace=apps/brain
+
+      - name: Typecheck (brain)
+        working-directory: apps/brain
+        run: npx tsc --noEmit
+
+      - name: Tests (brain)
+        run: npm test --workspace=apps/brain
