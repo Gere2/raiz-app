@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import type { Metadata } from "next";
 import { isEnverdeHost } from "./components/brand";
 import { BrandProvider } from "./components/brand-context";
+import CommunityNav from "./components/CommunityNav";
 
 // El brain sirve DOS marcas: Raíz y Grano (single-tenant original) y Enverde
 // (CFO multi-tenant para cafeterías, dominio app.enverde.app). Tanto el título
@@ -35,7 +36,10 @@ export default async function RootLayout({
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet" />
       </head>
       <body className="antialiased">
-        <BrandProvider host={host}>{children}</BrandProvider>
+        <BrandProvider host={host}>
+          {children}
+          <CommunityNav />
+        </BrandProvider>
       </body>
     </html>
   );

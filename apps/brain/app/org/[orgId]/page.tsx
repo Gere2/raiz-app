@@ -23,6 +23,7 @@ import { authedFetch } from "@/lib/authed-fetch";
 import ProfitabilitySummary from "@/app/components/sections/ProfitabilitySummary";
 import ProfitabilityOnboarding from "@/app/components/sections/ProfitabilityOnboarding";
 import ProfitabilityDemo from "@/app/components/sections/ProfitabilityDemo";
+import CommunityHubCard from "@/app/components/sections/CommunityHubCard";
 import { trackActivation } from "@/lib/track-activation";
 
 const ACCENT = "#3F6B2E";
@@ -175,6 +176,9 @@ export default function OrgHubPage() {
       {posError && (
         <p className="mt-3 text-sm" style={{ color: "var(--t-danger)" }}>{posError}</p>
       )}
+
+      {/* ─── Apartado de comunidad (novedades + preguntas entre negocios) ─── */}
+      <CommunityHubCard user={user} orgId={orgId} authedFetch={authedFetch} />
 
       {/* ─── Pie · fórmula + honestidad + privacidad + gratis ─── */}
       <section className="mt-8 rounded-xl border p-5" style={{ borderColor: "var(--t-border)", background: "var(--t-surface)" }}>

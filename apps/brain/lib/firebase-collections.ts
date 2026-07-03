@@ -17,6 +17,14 @@ export const COLLECTIONS = {
   REDEMPTIONS: "redemptions",
   MEETING_COMBOS: "meeting_combos",
 
+  // Comunidad Enverde (global, cross-café — NO org-scoped):
+  // foro compartido entre todos los negocios. Topics por tipo de negocio.
+  COMMUNITY_POSTS: "community_posts",
+  ANSWERS: "answers", // subcolección de community_posts/{postId}
+  VOTES: "votes", // subcolección de .../answers/{answerId} — doc id = uid
+  COMMUNITY_NOTIFICATIONS: "community_notifications", // subcolección de users/{uid}
+  COMMUNITY_REPORTS: "community_reports", // global — moderación (flags de revisión)
+
   // Nested collections (under orgs/{orgId})
   MEMBERS: "members",
   NOTES: "notes",

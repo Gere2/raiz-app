@@ -244,6 +244,13 @@ export default function TreasuryStartPage() {
           >
             Subir otro mes
           </a>
+          <a
+            href={`/org/${orgId}/comunidad`}
+            className="rounded-lg border px-4 py-2 text-sm font-semibold"
+            style={{ borderColor: "var(--t-border)", color: "var(--t-accent)" }}
+          >
+            ¿Dudas con estos números? Pregunta a la comunidad →
+          </a>
         </div>
       </main>
     );
